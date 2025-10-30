@@ -1,0 +1,201 @@
+$focus-shadow: 0 0 0 3px rgba($color-primary-alt, 0.35);
+$transition-duration: 200ms;
+$textfield-font-family: $font-family-base;
+$textfield-padding: 0.5rem;
+$textfield-border-radius: 3px;
+$textfield-placeholder-color: rgba($color-text, 0.6);
+$textfield-focus-shadow: 0 0 0 3px rgba($color-primary, 0.15);
+$textfield-hover-border-color: color.scale($color-border, $lightness: -12%);
+$textfield-neutral-hover-border-color: rgb(197.12, 197.12, 197.12);
+$textfield-datepicker-padding: 0 8px 0 0;
+$textfield-datepicker-sections-padding: 0.5rem;
+$textfield-day-border-radius: 3px;
+
+.app-textfield {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.app-textfield-label {
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: $color-text;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-textfield-label-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.app-textfield-required-indicator {
+  color: $color-error;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+
+.app-textfield-input {
+  width: 100%;
+  padding: $textfield-padding;
+  border: 1px solid $color-border;
+  border-radius: $textfield-border-radius;
+  background-color: $color-surface;
+  color: $color-text;
+  font-size: 1rem;
+  transition: border-color $transition-duration ease, box-shadow $transition-duration ease;
+
+  &::placeholder {
+    color: $textfield-placeholder-color;
+    font-size: 0.875rem;
+  }
+
+  &:hover {
+    border-color: $textfield-neutral-hover-border-color;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: $textfield-focus-shadow;
+  }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px $color-surface inset !important;
+    box-shadow: 0 0 0 1000px $color-surface inset !important;
+    -webkit-text-fill-color: $color-text !important;
+    background-color: transparent !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+.app-textfield-input--error {
+  border-color: $color-error;
+
+  &:hover {
+    border-color: $color-error;
+  }
+
+  &:focus-within {
+    border-color: $color-error;
+    box-shadow: none;
+  }
+}
+
+.app-textfield--date-picker {
+  font-family: $textfield-font-family !important;
+  .MuiPickersOutlinedInput-root {
+    font-family: $textfield-font-family !important;
+    border-radius: $textfield-border-radius !important;
+    padding: $textfield-datepicker-padding !important;
+    
+    .MuiPickersOutlinedInput-notchedOutline {
+      border: 1px solid $color-border !important;
+      transition: border-color $transition-duration ease, box-shadow $transition-duration ease;
+    }
+
+    &:hover:not(.Mui-focused):not(.Mui-error):not(.Mui-disabled) {
+      .MuiPickersOutlinedInput-notchedOutline {
+        border: 1px solid $textfield-neutral-hover-border-color !important;
+      }
+    }
+
+    &.Mui-focused:not(.Mui-error) {
+      .MuiPickersOutlinedInput-notchedOutline {
+        border-color: $color-primary !important;
+      }
+      box-shadow: $textfield-focus-shadow !important;
+    }
+  }
+
+  .MuiPickersSectionList-root,
+  .MuiPickersInputBase-sectionsContainer,
+  .MuiPickersOutlinedInput-sectionsContainer {
+    font-family: $textfield-font-family !important;
+    padding: $textfield-datepicker-sections-padding !important;
+  }
+}
+
+.MuiPickersDay-root,
+.MuiButtonBase-root.MuiPickersDay-root,
+.css-qct7wd-MuiButtonBase-root-MuiPickersDay-root {
+  font-family: $textfield-font-family !important;
+  border-radius: $textfield-day-border-radius !important;
+  line-height: 0 !important;
+  transition: none !important;
+}
+
+.MuiPickersDay-root:not(.Mui-selected),
+.MuiButtonBase-root.MuiPickersDay-root:not(.Mui-selected),
+.css-qct7wd-MuiButtonBase-root-MuiPickersDay-root:not(.Mui-selected) {
+  color: $color-neutral-800 !important;
+  background-color: transparent !important;
+}
+
+.MuiPickersDay-root.Mui-selected,
+.MuiButtonBase-root.MuiPickersDay-root.Mui-selected,
+.css-qct7wd-MuiButtonBase-root-MuiPickersDay-root.Mui-selected {
+  background-color: $color-primary !important;
+  color: $color-surface !important;
+}
+
+.MuiPickersDay-root:focus,
+.MuiButtonBase-root.MuiPickersDay-root:focus,
+.css-qct7wd-MuiButtonBase-root-MuiPickersDay-root:focus,
+.MuiPickersDay-root.Mui-focusVisible,
+.MuiButtonBase-root.MuiPickersDay-root.Mui-focusVisible,
+.css-qct7wd-MuiButtonBase-root-MuiPickersDay-root.Mui-focusVisible {
+  background-color: $color-primary !important;
+  color: $color-surface !important;
+}
+
+.MuiPickersDay-root.MuiPickersDay-today,
+.MuiButtonBase-root.MuiPickersDay-root.MuiPickersDay-today,
+.css-qct7wd-MuiButtonBase-root-MuiPickersDay-root.MuiPickersDay-today {
+  border: 1px solid $color-primary !important;
+}
+
+.MuiPickersYear-yearButton,
+.css-1mvmid-MuiYearCalendar-button {
+  font-family: $textfield-font-family !important;
+  border-radius: $textfield-day-border-radius !important;
+  color: $color-neutral-800 !important;
+  transition: none !important;
+
+  &.Mui-selected,
+  &.Mui-selected:hover,
+  &.Mui-selected:focus,
+  &.Mui-selected.Mui-focusVisible {
+    background-color: $color-primary !important;
+    color: $color-surface !important;
+  }
+
+  &:not(.Mui-selected) {
+    background-color: transparent !important;
+  }
+
+  &:focus,
+  &.Mui-focusVisible {
+    background-color: $color-primary !important;
+    color: $color-surface !important;
+  }
+
+  &[aria-current='date'] {
+    border: 1px solid $color-primary !important;
+    color: $color-primary !important;
+
+    &:hover,
+    &:focus,
+    &.Mui-focusVisible {
+      background-color: rgba($color-primary, 0.08) !important;
+    }
+  }
+}

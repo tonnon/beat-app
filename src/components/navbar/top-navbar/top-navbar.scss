@@ -1,0 +1,138 @@
+$top-navbar-base-color: $page-background;
+$top-navbar-bg: rgba($top-navbar-base-color, 0.75);
+$top-navbar-bg-scrolled: rgba($top-navbar-base-color, 0.75);
+$top-navbar-height: 96px;
+$top-navbar-padding: 0.3125rem 2rem;
+$top-navbar-text-color: $link-color;
+$top-navbar-text-hover: $color-primary;
+$top-navbar-transition: all 0.3s ease-in-out;
+$top-navbar-z-index: 1000;
+$top-navbar-shadow-scrolled: 0 2px 8px rgba(0, 0, 0, 0.1);
+$top-navbar-link-gap: 2.5rem;
+$top-navbar-logo-width: 100px;
+$top-navbar-logo-height: 80px;
+$top-navbar-focus-color: $color-primary;
+$top-navbar-focus-offset: 2px;
+$top-navbar-gradient-start: $color-primary;
+$top-navbar-gradient-end: $color-primary-alt;
+$top-navbar-height-mobile: 56px;
+$top-navbar-mobile-breakpoint: 660px;
+
+.top-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: $top-navbar-height;
+  background: $top-navbar-bg;
+  color: $top-navbar-text-color;
+  z-index: $top-navbar-z-index;
+  transition: $top-navbar-transition;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: $top-navbar-padding;
+
+  &.is-scrolled {
+    background: $top-navbar-bg-scrolled;
+    box-shadow: $top-navbar-shadow-scrolled;
+  }
+}
+
+.top-navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.top-navbar-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.top-navbar-logo {
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.top-navbar-logo-image {
+  height: $top-navbar-logo-height;
+  width: $top-navbar-logo-width;
+  display: block;
+  object-fit: contain;
+}
+
+.top-navbar-center {
+  justify-content: center;
+  flex: 1;
+  gap: $top-navbar-link-gap;
+}
+
+.top-navbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.top-navbar-right-desktop {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: $top-navbar-mobile-breakpoint) {
+  .top-navbar-container {
+    position: relative;
+    justify-content: center;
+    padding: $top-navbar-padding;
+    gap: 0;
+    height: auto;
+  }
+
+  .top-navbar-center {
+    display: none;
+  }
+
+  .top-navbar-logo {
+    margin: 0 auto;
+  }
+
+  .top-navbar-right {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    gap: 0.5rem;
+  }
+
+  .top-navbar-right-desktop {
+    display: none;
+  }
+
+  .top-navbar-mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // When user is authenticated: logo left, UserMenu visible, mobile menu still present
+  .top-navbar.is-authenticated {
+    .top-navbar-container {
+      justify-content: space-between;
+    }
+
+    .top-navbar-logo {
+      margin: 0;
+    }
+
+    .top-navbar-right-desktop {
+      display: flex;
+    }
+  }
+}

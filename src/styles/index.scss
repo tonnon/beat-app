@@ -1,0 +1,54 @@
+@use './theme' as *;
+
+$color-scrollbar-track: color.adjust($color-primary, $lightness: 52%);
+$color-scrollbar-track-shadow: rgba($color-primary, 0.12);
+$color-scrollbar-thumb-shadow: rgba($color-primary, 0.28);
+$color-scrollbar-thumb-hover-shadow: rgba($color-primary-alt, 0.35);
+$page-padding-x: clamp(1rem, 4vw, 2.75rem);
+$page-padding-top: 6.5rem;
+$page-padding-bottom: 2rem 2rem;
+$container-max-width: 1080px;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd {
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  background-color: $page-background;
+  color: $color-text;
+  font-family: $font-family-base;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba($color-primary, 0.65) rgba($color-primary, 0.08);
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img, picture {
+  max-width: 100%;
+  display: block;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+::selection {
+  background-color: rgba($color-primary, 0.2);
+  color: $color-text;
+}

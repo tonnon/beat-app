@@ -1,0 +1,120 @@
+$informed-consent-media-max-height: 700px;
+$informed-consent-gap-large: 1.5rem;
+$informed-consent-gap-medium: 1rem;
+$informed-consent-gap-small: 0.75rem;
+$informed-consent-heading-gap: 0.5rem;
+$informed-consent-padding-inline-end: 0.5rem;
+$informed-consent-padding-large: 1.5rem;
+$informed-consent-padding-medium: 1rem;
+$informed-consent-border-radius: 16px;
+$informed-consent-section-background: rgba($color-white, 0.8);
+$informed-consent-section-border: 1px solid rgba($color-primary, 0.12);
+$informed-consent-section-shadow: 0 18px 40px -26px rgba($color-primary, 0.35);
+$informed-consent-section-backdrop-filter: blur(6px);
+$informed-consent-section-outline-border: 1px solid rgba($color-primary-alt, 0.08);
+$informed-consent-heading-font-size: 1.1rem;
+$informed-consent-heading-font-weight: 700;
+$informed-consent-heading-color: $color-neutral-900;
+$informed-consent-heading-letter-spacing: -0.01em;
+$informed-consent-heading-icon-size: 8px;
+$informed-consent-heading-icon-shadow: 0 0 0 6px rgba($color-primary, 0.12);
+$informed-consent-paragraph-font-size: 1rem;
+$informed-consent-paragraph-line-height: 1.7;
+$informed-consent-paragraph-color: rgba($color-neutral-900, 0.85);
+$informed-consent-paragraph-mobile-font-size: 0.95rem;
+$informed-consent-paragraph-mobile-line-height: 1.6;
+$informed-consent-footer-width: 100%;
+$informed-consent-footer-margin-bottom: 1.5rem;
+$informed-consent-footer-mobile-margin-bottom: 1rem;
+$informed-consent-confirm-margin-top: 0.5rem;
+
+.informed-consent-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: $informed-consent-gap-large;
+  padding-right: $informed-consent-padding-inline-end;
+  flex: 1;
+
+  @media (max-height: $informed-consent-media-max-height) {
+    gap: $informed-consent-gap-medium;
+  }
+}
+
+.informed-consent-section {
+  display: flex;
+  flex-direction: column;
+  gap: $informed-consent-gap-medium;
+  padding: $informed-consent-padding-large;
+  border-radius: $informed-consent-border-radius;
+  background: $informed-consent-section-background;
+  border: $informed-consent-section-border;
+  box-shadow: $informed-consent-section-shadow;
+  backdrop-filter: $informed-consent-section-backdrop-filter;
+  position: relative;
+
+  @media (max-height: $informed-consent-media-max-height) {
+    padding: $informed-consent-padding-medium;
+    gap: $informed-consent-gap-small;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: $informed-consent-section-outline-border;
+    pointer-events: none;
+  }
+}
+
+.informed-consent-heading {
+  font-size: $informed-consent-heading-font-size;
+  font-weight: $informed-consent-heading-font-weight;
+  color: $informed-consent-heading-color;
+  margin: 0;
+  letter-spacing: $informed-consent-heading-letter-spacing;
+  display: inline-flex;
+  align-items: center;
+  gap: $informed-consent-heading-gap;
+}
+
+.informed-consent-heading::before {
+  content: '';
+  width: $informed-consent-heading-icon-size;
+  height: $informed-consent-heading-icon-size;
+  border-radius: 50%;
+  background: $color-primary;
+  box-shadow: $informed-consent-heading-icon-shadow;
+}
+
+.informed-consent-paragraph {
+  font-size: $informed-consent-paragraph-font-size;
+  line-height: $informed-consent-paragraph-line-height;
+  color: $informed-consent-paragraph-color;
+  margin: 0;
+
+  @media (max-height: $informed-consent-media-max-height) {
+    font-size: $informed-consent-paragraph-mobile-font-size;
+    line-height: $informed-consent-paragraph-mobile-line-height;
+  }
+}
+
+.informed-consent-footer {
+  display: flex;
+  flex-direction: column;
+  gap: $informed-consent-gap-large;
+  width: $informed-consent-footer-width;
+  margin-bottom: $informed-consent-footer-margin-bottom;
+  position: relative;
+  z-index: 1;
+
+  @media (max-height: $informed-consent-media-max-height) {
+    gap: $informed-consent-gap-medium;
+    margin-bottom: $informed-consent-footer-mobile-margin-bottom;
+  }
+}
+
+.informed-consent-confirm {
+  align-self: flex-end;
+  margin-top: $informed-consent-confirm-margin-top;
+}

@@ -1,0 +1,113 @@
+$card-radius: 3px;
+$card-shadow: 0 12px 24px $card-shadow-color;
+$header-gap: 0.5rem;
+$header-padding: 16px;
+$header-font-size: 0.8rem;
+$header-letter-spacing: 0.08em;
+$status-dot-size: 0.42rem;
+$status-dot-radius: 50%;
+$status-dot-shadow: 0 0 0 2px $card-status-dot-shadow;
+$body-gap: 1.2rem;
+$body-padding: 16px 1.25rem 1.65rem;
+$title-font-size: 1rem;
+$title-font-weight: 600;
+$title-underline-height: 2px;
+$title-underline-radius: 999px;
+$title-underline-margin: 0.6rem;
+$footer-gap: 0.75rem;
+$footer-padding: 0 1.2rem 1.2rem;
+$mobile-breakpoint: 640px;
+
+.questionnaire-card {
+  --questionnaire-status-bar-bg: #{$color-primary};
+  --questionnaire-title-color: #{$card-title};
+  --questionnaire-title-underline: #{$card-title-underline};
+  --progress-circle-color: #{$progress-primary};
+  --progress-circle-track: #{$progress-track};
+
+  background: $color-white;
+  border: 1px solid $card-border-color;
+  border-radius: $card-radius;
+  box-shadow: $card-shadow;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 100%;
+}
+
+.questionnaire-card-header {
+  margin: 0;
+  padding: 0;
+}
+
+.questionnaire-card .status-badge {
+  display: flex;
+  align-items: center;
+  gap: $header-gap;
+  width: 100%;
+  padding: $header-padding;
+  background: var(--questionnaire-status-bar-bg);
+  color: $color-white;
+  font-size: $header-font-size;
+  font-weight: 700;
+  letter-spacing: $header-letter-spacing;
+  text-transform: uppercase;
+}
+
+.questionnaire-card .status-badge[data-status] .status-badge-dot {
+  width: $status-dot-size;
+  height: $status-dot-size;
+  border-radius: $status-dot-radius;
+  box-shadow: $status-dot-shadow;
+}
+
+.questionnaire-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $body-gap;
+  padding: $body-padding;
+}
+
+.questionnaire-card-title {
+  align-self: stretch;
+  margin: 0;
+  font-size: $title-font-size;
+  font-weight: $title-font-weight;
+  color: var(--questionnaire-title-color);
+}
+
+.questionnaire-card-title::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: $title-underline-height;
+  margin-top: $title-underline-margin;
+  border-radius: $title-underline-radius;
+  background: var(--questionnaire-title-underline);
+}
+
+.questionnaire-card-footer {
+  display: flex;
+  gap: $footer-gap;
+  padding: $footer-padding;
+  margin-top: auto;
+
+  .app-button {
+    flex: 1;
+  }
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .questionnaire-card-body {
+    padding: 1.1rem 1rem 1.4rem;
+  }
+
+  .questionnaire-card-footer {
+    flex-direction: column;
+
+    .app-button {
+      width: 100%;
+    }
+  }
+}

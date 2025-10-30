@@ -1,0 +1,98 @@
+$user-menu-trigger-padding: 0.25rem;
+$user-menu-trigger-radius: 3px;
+$user-menu-trigger-color: $button-color-primary;
+$user-menu-trigger-shadow-hover: 0 4px 12px $button-color-primary-shadow;
+$user-menu-trigger-transition: color 180ms ease, filter 180ms ease;
+$user-menu-focus-outline: rgba($button-color-primary, 0.4);
+$user-menu-content-min-width: 15rem;
+$user-menu-content-padding: 0.25rem;
+$user-menu-content-background: $color-surface;
+$user-menu-content-border-radius: 3px;
+$user-menu-content-border-color: $color-border;
+$user-menu-content-shadow: 0 18px 36px $dialog-shadow-color;
+$user-menu-item-padding: 0.65rem 0.85rem;
+$user-menu-item-gap: 0.75rem;
+$user-menu-item-radius: 0.5rem;
+$user-menu-icon-size: 1.5rem;
+$user-menu-icon-color: $color-primary;
+$user-menu-icon-highlight-color: $color-primary-hover;
+$user-menu-label-font-size: 0.95rem;
+$user-menu-label-font-weight: 600;
+
+.user-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $user-menu-trigger-padding;
+  border: none;
+  border-radius: $user-menu-trigger-radius;
+  background: transparent;
+  box-shadow: none;
+  color: $user-menu-trigger-color;
+  cursor: pointer;
+  transition: $user-menu-trigger-transition;
+}
+
+.user-menu-trigger:focus-visible {
+  outline: 3px solid $user-menu-focus-outline;
+  outline-offset: 2px;
+}
+
+.user-menu-trigger:hover {
+  filter: drop-shadow($user-menu-trigger-shadow-hover);
+}
+
+.user-menu-content {
+  min-width: $user-menu-content-min-width;
+  padding: $user-menu-content-padding;
+  background: $user-menu-content-background;
+  border-radius: $user-menu-content-border-radius;
+  border: 1px solid $user-menu-content-border-color;
+  box-shadow: $user-menu-content-shadow;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  backdrop-filter: blur(8px);
+  animation: dropdown-fade-in 140ms ease-out;
+  will-change: opacity, transform;
+}
+
+.user-menu-item {
+  padding: 0;
+}
+
+.user-menu-item-content {
+  display: flex;
+  align-items: center;
+  gap: $user-menu-item-gap;
+  width: 100%;
+  padding: $user-menu-item-padding;
+  border-radius: $user-menu-item-radius;
+}
+
+.user-menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $user-menu-icon-size;
+  height: $user-menu-icon-size;
+  color: $user-menu-icon-color;
+  outline: none;
+}
+
+.user-menu-item-icon svg {
+  outline: none;
+  pointer-events: none;
+}
+
+.user-menu-item-label {
+  font-size: $user-menu-label-font-size;
+  font-weight: $user-menu-label-font-weight;
+  color: inherit;
+}
+
+.dropdown-item[data-highlighted] .user-menu-item-icon,
+.dropdown-item:focus-visible .user-menu-item-icon {
+  color: $user-menu-icon-highlight-color;
+}
+

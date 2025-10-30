@@ -1,0 +1,41 @@
+{
+  "header": {
+    "back": "Tornar",
+    "title": "Qüestionaris",
+    "subtitle": "Recorda, les teves respostes són fonamentals per oferir-te continguts personalitzats segons les teves necessitats i garantir una intervenció amb èxit."
+  },
+  "filters": {
+    "label": "Estat",
+    "all": "Tots",
+    "completed": "Completats",
+    "in_progress": "En curs",
+    "not_started": "Sense iniciar"
+  },
+  "statuses": {
+    "completed": "Completat",
+    "in_progress": "En curs",
+    "not_started": "Sense iniciar"
+  },
+  "actions": {
+    "responses": "Respostes",
+    "continue": "Continuar"
+  },
+  "empty": {
+    "title": "No hi ha qüestionaris per a aquest filtre",
+    "description": "Ajusta els filtres o torna més tard per continuar amb els teus qüestionaris."
+  },
+  "cards": {
+    "demographic_data": "Dades demogràfiques",
+    "lifestyle": "Estil de vida",
+    "depression": "Depressió",
+    "anxiety": "Ansietat",
+    "stress": "Estrès",
+    "sleep": "Insomni",
+    "wellbeing": "Benestar",
+    "quality_of_life": "Qualitat de vida",
+    "eq5d": "EQ-5D-5L",
+    "productivity": "Productivitat",
+    "social": "Àmbit social",
+    "nutrition": "Nutrició"
+  }
+}

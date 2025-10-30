@@ -1,0 +1,84 @@
+$progress-size: 112px;
+$progress-inner-inset: 12px;
+$progress-stroke-width: 10;
+$progress-inner-shadow: inset 0 0 0 2px $progress-inner-shadow-color;
+$progress-transition: stroke-dashoffset 0.4s ease;
+
+$progress-status-config: (
+  'completed': (
+    'progress-circle-color': $progress-completed,
+  ),
+  'not_started': (
+    'progress-circle-color': $color-input-border,
+  )
+);
+
+.progress-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $progress-size;
+  height: $progress-size;
+}
+
+.progress-circle-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-circle-inner::before {
+  content: '';
+  position: absolute;
+  inset: $progress-inner-inset;
+  border-radius: 50%;
+  background: $color-white;
+  box-shadow: $progress-inner-shadow;
+}
+
+.progress-circle-inner svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.progress-circle circle {
+  fill: none;
+}
+
+.progress-circle circle[data-circle='track'] {
+  stroke: var(--progress-circle-track, $progress-track);
+  stroke-width: $progress-stroke-width;
+  stroke-linecap: butt;
+}
+
+.progress-circle circle[data-circle='progress'] {
+  stroke: var(--progress-circle-color, $progress-primary);
+  stroke-width: $progress-stroke-width;
+  stroke-linecap: round;
+  transition: $progress-transition;
+}
+
+.progress-circle-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $color-neutral-800;
+  z-index: 2;
+}
+
+@each $status, $variables in $progress-status-config {
+  [data-status='#{$status}'] .progress-circle {
+    @each $key, $value in $variables {
+      --#{$key}: #{$value};
+    }
+  }
+}

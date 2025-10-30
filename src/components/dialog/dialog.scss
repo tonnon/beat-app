@@ -1,0 +1,207 @@
+$dialog-overlay-blur: 4px;
+$dialog-overlay-padding: clamp(1.5rem, 4vw, 2.5rem);
+$dialog-overlay-z-index: 1000;
+$dialog-content-width: min(44.6875rem, 100%);
+$dialog-content-max-width: 90vw;
+$dialog-content-max-height: min(90vh, 47.5rem);
+$dialog-content-border-radius: 0.1875rem;
+$dialog-content-padding: 1.5rem;
+$dialog-content-shadow: 0 0.25rem 0.25rem $dialog-shadow-color;
+$dialog-content-z-index: 1001;
+$dialog-header-gap: 0.75rem;
+$dialog-header-text-gap: 0.5rem;
+$dialog-close-padding: 0.35rem;
+$dialog-body-scrollbar-width: 0.375rem;
+$dialog-body-scrollbar-track-color: rgba($color-primary, 0.08);
+$dialog-body-scrollbar-thumb: linear-gradient(180deg, rgba($color-primary, 0.8), rgba($color-primary-alt, 0.6));
+$dialog-body-scrollbar-thumb-hover: linear-gradient(180deg, rgba($color-primary, 0.9), rgba($color-primary-alt, 0.7));
+$dialog-body-padding: 0.375rem 0.375rem 0.1875rem 0;
+$dialog-actions-gap: 1.25rem;
+$dialog-actions-margin-top: 2rem;
+$dialog-actions-content-gap: 1rem;
+$dialog-actions-buttons-gap: 1.5rem;
+$dialog-mobile-padding: 1rem;
+$dialog-mobile-buttons-gap: 0.75rem;
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: $dialog-overlay-bg;
+  backdrop-filter: blur($dialog-overlay-blur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $dialog-overlay-padding;
+  z-index: $dialog-overlay-z-index;
+}
+
+.dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  width: $dialog-content-width;
+  max-width: $dialog-content-max-width;
+  max-height: $dialog-content-max-height;
+  background-color: $dialog-surface-color;
+  border-radius: $dialog-content-border-radius;
+  box-shadow: $dialog-content-shadow;
+  display: flex;
+  flex-direction: column;
+  z-index: $dialog-content-z-index;
+  padding: $dialog-content-padding;
+}
+
+.dialog-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $dialog-header-gap;
+}
+
+.dialog-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: $dialog-header-text-gap;
+  text-align: center;
+  width: 100%;
+}
+
+.dialog-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: $color-text;
+  text-transform: uppercase;
+}
+
+.dialog-subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: $color-text;
+  margin-bottom: 1rem;
+}
+
+.dialog-close {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $dialog-close-padding;
+  align-self: flex-end;
+  background: none;
+  border: none;
+}
+
+.dialog-close svg {
+  width: 24px;
+  height: 24px;
+  color: $dialog-close-color;
+}
+
+.dialog-body {
+  overflow-y: auto;
+  max-height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($color-primary, 0.45) $dialog-body-scrollbar-track-color;
+  padding: $dialog-body-padding;
+}
+
+.dialog-body::-webkit-scrollbar {
+  width: $dialog-body-scrollbar-width;
+}
+
+.dialog-body::-webkit-scrollbar-track {
+  background: $dialog-body-scrollbar-track-color;
+  border-radius: 999px;
+}
+
+.dialog-body::-webkit-scrollbar-thumb {
+  background: $dialog-body-scrollbar-thumb;
+  border-radius: 999px;
+}
+
+.dialog-body::-webkit-scrollbar-thumb:hover {
+  background: $dialog-body-scrollbar-thumb-hover;
+}
+
+.dialog-body::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $dialog-actions-gap;
+  margin-top: $dialog-actions-margin-top;
+}
+
+.dialog-actions-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $dialog-actions-content-gap;
+  width: 100%;
+}
+
+.dialog-actions-content--align-start {
+  align-items: flex-start;
+}
+
+.dialog-actions-content--align-end {
+  align-items: flex-end;
+}
+
+.dialog-actions-support-text {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: $color-text;
+  text-align: left;
+  width: 100%;
+}
+
+.dialog-actions-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $dialog-actions-buttons-gap;
+  width: 100%;
+}
+
+.dialog-actions-buttons--align-end {
+  justify-content: flex-end;
+}
+
+@media (max-width: 460px) {
+  .dialog-content {
+    width: calc(100% - 2rem);
+    height: auto;
+    max-width: none;
+    max-height: calc(100% - 2rem);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: $dialog-mobile-padding;
+  }
+
+  .dialog-overlay {
+    padding: $dialog-mobile-padding;
+    align-items: center;
+  }
+
+  .dialog-actions-buttons {
+    flex-direction: column;
+    gap: $dialog-mobile-buttons-gap;
+  }
+
+  .dialog-actions-secondary,
+  .dialog-actions-primary {
+    width: 100%;
+    min-width: unset;
+  }
+}

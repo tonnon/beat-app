@@ -1,0 +1,169 @@
+$dropdown-min-width: 12rem;
+$dropdown-padding: 0.5rem;
+$dropdown-border-radius: 3px;
+$dropdown-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+$dropdown-backdrop-blur: 8px;
+$dropdown-animation-duration: 140ms;
+$dropdown-z-index: 9999;
+$dropdown-arrow-shadow: 0 -1px 1px rgba(0, 0, 0, 0.05);
+$dropdown-item-gap: 0.75rem;
+$dropdown-item-padding: 0.5rem 0.75rem;
+$dropdown-item-border-radius: 3px;
+$dropdown-item-font-size: 0.95rem;
+$dropdown-item-font-weight: 400;
+$dropdown-item-line-height: 1.3;
+$dropdown-item-transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+$dropdown-item-highlight-bg: rgba(7, 159, 164, 0.08);
+$dropdown-item-open-transform: translateX(2px);
+$dropdown-item-disabled-opacity: 0.4;
+$dropdown-icon-size: 16px;
+$dropdown-body-gap: 0.125rem;
+$dropdown-description-font-size: 0.8rem;
+$dropdown-filter-trigger-radius: 3px;
+$dropdown-filter-trigger-padding: 0.65rem 1rem;
+
+.dropdown-content {
+  min-width: $dropdown-min-width;
+  padding: $dropdown-padding;
+  border-radius: $dropdown-border-radius;
+  background-color: $color-white;
+  border: 1px solid $color-input-border;
+  box-shadow: $dropdown-shadow;
+  backdrop-filter: blur($dropdown-backdrop-blur);
+  animation: dropdown-fade-in $dropdown-animation-duration ease-out;
+  z-index: $dropdown-z-index;
+}
+
+.dropdown-content--filter {
+  min-width: var(--radix-dropdown-menu-trigger-width);
+  width: var(--radix-dropdown-menu-trigger-width);
+  max-width: var(--radix-dropdown-menu-trigger-width);
+  padding: 0.35rem;
+  border-radius: 3px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
+}
+
+.dropdown-trigger--filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 9.5rem;
+  padding: $dropdown-filter-trigger-padding;
+  border-radius: $dropdown-filter-trigger-radius;
+  border: 1px solid $color-input-border;
+  background: $color-white;
+  color: $color-neutral-800;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+
+  &:hover,
+  &:focus-visible {
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+  }
+
+  &::after {
+    content: '▾';
+    font-size: clamp(1.35rem, 2vw, 1.65rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    line-height: 1;
+    font-weight: 700;
+    color: $color-input-border;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+.dropdown-arrow {
+  fill: $color-input-border;
+  filter: drop-shadow($dropdown-arrow-shadow);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: $dropdown-item-gap;
+  padding: $dropdown-item-padding;
+  border-radius: $dropdown-item-border-radius;
+  color: $color-neutral-800;
+  font-size: $dropdown-item-font-size;
+  font-weight: $dropdown-item-font-weight;
+  line-height: $dropdown-item-line-height;
+  cursor: pointer;
+  outline: none;
+  transition: $dropdown-item-transition;
+}
+
+.dropdown-item[data-highlighted],
+.dropdown-item:focus-visible {
+  background-color: $dropdown-item-highlight-bg;
+  color: $color-primary;
+}
+
+.dropdown-item[data-state='open'] {
+  transform: $dropdown-item-open-transform;
+}
+
+.dropdown-item[data-disabled] {
+  opacity: $dropdown-item-disabled-opacity;
+  cursor: not-allowed;
+}
+
+.dropdown-item--filter.is-active {
+  background: rgba(7, 159, 164, 0.12);
+  color: $color-primary;
+}
+
+.dropdown-item-layout {
+  display: flex;
+  align-items: center;
+  gap: $dropdown-item-gap;
+  width: 100%;
+}
+
+.dropdown-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $dropdown-icon-size;
+  height: $dropdown-icon-size;
+  color: $color-primary;
+}
+
+.dropdown-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: $dropdown-body-gap;
+}
+
+.dropdown-item-label {
+  font-size: $dropdown-item-font-size;
+  font-weight: 600;
+  color: inherit;
+}
+
+.dropdown-item-description {
+  font-size: $dropdown-description-font-size;
+  font-weight: 500;
+  color: $color-neutral-800;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

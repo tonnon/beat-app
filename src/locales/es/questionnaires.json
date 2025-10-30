@@ -1,0 +1,41 @@
+{
+  "header": {
+    "back": "Volver",
+    "title": "Cuestionarios",
+    "subtitle": "Recuerda, tus respuestas son fundamentales para ofrecerte contenidos personalizados según tus necesidades y garantizar una intervención con éxito."
+  },
+  "filters": {
+    "label": "Estado",
+    "all": "Todos",
+    "completed": "Completados",
+    "in_progress": "En curso",
+    "not_started": "Sin iniciar"
+  },
+  "statuses": {
+    "completed": "Completado",
+    "in_progress": "En curso",
+    "not_started": "Sin iniciar"
+  },
+  "actions": {
+    "responses": "Respuestas",
+    "continue": "Continuar"
+  },
+  "empty": {
+    "title": "No hay cuestionarios para este filtro",
+    "description": "Ajusta los filtros o vuelve más tarde para continuar con tus cuestionarios."
+  },
+  "cards": {
+    "demographic_data": "Datos demográficos",
+    "lifestyle": "Estilo de vida",
+    "depression": "Depresión",
+    "anxiety": "Ansiedad",
+    "stress": "Estrés",
+    "sleep": "Insomnio",
+    "wellbeing": "Bienestar",
+    "quality_of_life": "Calidad de vida",
+    "eq5d": "EQ-5D-5L",
+    "productivity": "En la Productividad",
+    "social": "Ámbito social",
+    "nutrition": "Nutrición"
+  }
+}

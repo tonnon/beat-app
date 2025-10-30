@@ -1,0 +1,87 @@
+$button-radius: 3px;
+$button-font-weight: 600;
+$button-transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+$button-solid-bg: $button-color-primary;
+$button-solid-bg-hover: $button-color-primary-hover;
+$button-solid-text: $color-surface;
+$button-solid-shadow: 0 10px 18px $button-color-primary-shadow;
+$button-border-color: $button-color-primary;
+$button-border-hover-bg: $button-color-border-hover-bg;
+$button-border-text: $button-color-primary;
+$button-padding-y: 8px;
+$button-padding-x: 16px;
+$button-font-size-md: 14px;
+$button-font-size-lg: 16px;
+$button-disabled-opacity: 0.55;
+$button-shadow-duration: 220ms;
+
+.app-button {
+  all: unset;
+  box-sizing: border-box;
+  border-radius: $button-radius;
+  border: 1px solid transparent;
+  font-weight: $button-font-weight;
+  cursor: pointer;
+  transition: background-color $button-shadow-duration ease-in, box-shadow $button-shadow-duration ease-in;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: none;
+  gap: 0.375rem;
+  font-family: inherit;
+}
+
+.app-button-spinner {
+  display: inline-flex;
+}
+
+.app-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-button:disabled {
+  cursor: not-allowed;
+  opacity: $button-disabled-opacity;
+  box-shadow: none;
+}
+
+.app-button-solid {
+  background: $button-solid-bg;
+  color: $button-solid-text;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.app-button-solid:not(:disabled):hover,
+.app-button-solid:not(:disabled):focus-visible {
+  background: $button-solid-bg-hover;
+  border-color: transparent;
+  box-shadow: 0 4px 4px 0 $button-color-primary-glow;
+  transition-timing-function: ease-out;
+}
+
+.app-button-border {
+  background: transparent;
+  color: $button-border-text;
+  border-color: $button-border-color;
+}
+
+.app-button-border:not(:disabled):hover,
+.app-button-border:not(:disabled):focus-visible {
+  background: $button-border-hover-bg;
+  box-shadow: 0 4px 4px 0 $button-color-primary-glow;
+  transition-timing-function: ease-out;
+}
+
+.app-button-md {
+  padding: $button-padding-y $button-padding-x;
+  font-size: $button-font-size-md;
+}
+
+.app-button-lg {
+  padding: $button-padding-y $button-padding-x;
+  font-size: $button-font-size-lg;
+}

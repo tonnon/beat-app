@@ -1,0 +1,108 @@
+.terms-of-use-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-right: 0.5rem;
+}
+
+.terms-of-use-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: rgba($color-white, 0.75);
+  border: 1px solid rgba($color-primary, 0.12);
+  box-shadow: 0 18px 40px -24px rgba($color-primary, 0.35);
+  backdrop-filter: blur(6px);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba($color-primary-alt, 0.08);
+    pointer-events: none;
+  }
+}
+
+.terms-of-use-language-heading {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba($color-primary, 0.7);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $color-primary;
+    box-shadow: 0 0 0 6px rgba($color-primary, 0.12);
+  }
+}
+
+.terms-of-use-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: $color-neutral-900;
+  margin: 0;
+  letter-spacing: -0.01em;
+  position: relative;
+  padding-bottom: 0.5rem;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 48px;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(120deg, rgba($color-primary, 0.75), rgba($color-primary-alt, 0.65));
+    box-shadow: 0 6px 12px rgba($color-primary, 0.25);
+  }
+}
+
+.terms-of-use-paragraph {
+  color: rgba($color-neutral-900, 0.85);
+  line-height: 1.7;
+  font-size: 0.975rem;
+  margin: 0;
+}
+
+.terms-of-use-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 0;
+  margin: 0;
+}
+
+.terms-of-use-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba($color-primary, 0.08), rgba($color-primary-dark, 0.05));
+  color: $color-neutral-900;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  position: relative;
+
+  &::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: $color-primary;
+    box-shadow: 0 0 0 4px rgba($color-primary, 0.15);
+    flex-shrink: 0;
+  }
+}

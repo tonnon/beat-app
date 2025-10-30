@@ -1,0 +1,38 @@
+$grid-gap: clamp(1rem, 2vw, 1.75rem);
+$grid-min-column: min(100%, 280px);
+$empty-radius: 1.5rem;
+$empty-padding: clamp(2rem, 4vw, 3rem);
+$empty-shadow: 0 18px 32px rgba(15, 23, 42, 0.12);
+
+.questionnaire-grid {
+  display: grid;
+  gap: $grid-gap;
+  grid-template-columns: repeat(auto-fit, minmax($grid-min-column, 1fr));
+}
+
+.questionnaire-grid-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  background: $color-white;
+  border-radius: $empty-radius;
+  border: 1px solid $color-empty-border;
+  box-shadow: $empty-shadow;
+  padding: $empty-padding;
+  max-width: 520px;
+}
+
+.questionnaire-grid-empty-title {
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  color: $color-empty-title;
+}
+
+.questionnaire-grid-empty-description {
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  color: $color-empty-description;
+  line-height: 1.6;
+}

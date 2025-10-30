@@ -1,0 +1,82 @@
+$top-navbar-link-color: $link-color;
+$top-navbar-link-hover: $color-primary;
+$top-navbar-gradient-start: $color-primary;
+$top-navbar-gradient-end: $color-primary-alt;
+
+.top-navbar-link {
+  text-decoration: none;
+  color: $top-navbar-link-color;
+  font-weight: 400;
+  font-size: 1rem;
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color 0.3s ease;
+  cursor: pointer;
+
+  &--default {
+    text-decoration: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $top-navbar-gradient-start, $top-navbar-gradient-end);
+    transition: width 0.3s ease;
+    border-radius: 2px;
+  }
+
+  &:hover {
+    color: $top-navbar-link-hover;
+
+    &::after {
+      width: 100%;
+    }
+  }
+
+  &:focus {
+    color: $top-navbar-link-hover;
+    outline: none;
+
+    &::after {
+      width: 100%;
+    }
+  }
+
+  &.active {
+    color: $top-navbar-link-hover;
+    font-weight: 500;
+
+    &::after {
+      width: 100%;
+    }
+  }
+
+  &--subtle {
+    font-size: 0.875rem;
+    font-weight: 400;
+    padding: 0;
+    color: $color-primary;
+    text-decoration: none;
+
+    &::after {
+      bottom: -0.25rem;
+      height: 1px;
+      background: $color-primary;
+    }
+
+    &:hover,
+    &:focus {
+      color: $color-primary-hover;
+      text-decoration: none;
+
+      &::after {
+        width: 100%;
+        background: $color-primary-hover;
+      }
+    }
+  }
+}

@@ -1,0 +1,119 @@
+$signup-success-gap: 1.5rem;
+$signup-success-icon-size: 4rem;
+$signup-success-icon-background: $color-success-strong;
+$signup-success-icon-box-shadow-color: rgba($color-success-strong, 0.28);
+$signup-success-icon-before-background: rgba($color-success-strong, 0.4);
+$signup-success-title-font-size: 1.5rem;
+$signup-success-title-font-weight: 800;
+$signup-success-title-color: $color-neutral-800;
+$signup-success-body-font-size: 0.875rem;
+$signup-success-body-font-weight: 400;
+$signup-success-body-color: $color-neutral-800;
+$signup-success-body-line-height: 1.5;
+$signup-success-icon-check-width: 1.75rem;
+$signup-success-icon-check-height: 0.95rem;
+$signup-success-icon-check-border-width: 0.35rem;
+$signup-success-icon-check-border-radius: 0.3rem;
+$signup-success-icon-animation-duration: 2.6s;
+$signup-success-animation-timing: ease-out;
+
+.signup-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $signup-success-gap;
+  text-align: center;
+}
+
+.signup-success-icon-wrapper {
+  width: $signup-success-icon-size;
+  height: $signup-success-icon-size;
+  border-radius: 50%;
+  background-color: $signup-success-icon-background;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 0 0 0 $signup-success-icon-box-shadow-color;
+  animation: signup-success-icon-pulse-shadow $signup-success-icon-animation-duration $signup-success-animation-timing infinite;
+}
+
+.signup-success-icon {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.signup-success-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: $signup-success-icon-before-background;
+  z-index: -1;
+  will-change: transform, opacity;
+  animation: signup-success-icon-pulse $signup-success-icon-animation-duration $signup-success-animation-timing infinite;
+  animation-delay: 0.5s;
+}
+
+.signup-success-icon-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: $signup-success-icon-check-width;
+  height: $signup-success-icon-check-height;
+  border: $signup-success-icon-check-border-width solid $color-white;
+  border-top: 0;
+  border-right: 0;
+  transform: translate(-50%, -65%) rotate(-45deg);
+  border-radius: $signup-success-icon-check-border-radius;
+}
+
+.signup-success-title {
+  margin: 0;
+  font-size: $signup-success-title-font-size;
+  font-weight: $signup-success-title-font-weight;
+  text-transform: uppercase;
+  color: $signup-success-title-color;
+}
+
+.signup-success-body {
+  margin: 0;
+  font-size: $signup-success-body-font-size;
+  font-weight: $signup-success-body-font-weight;
+  color: $signup-success-body-color;
+  line-height: $signup-success-body-line-height;
+}
+
+@keyframes signup-success-icon-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+
+  45% {
+    transform: scale(1.35);
+    opacity: 0.22;
+  }
+
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+@keyframes signup-success-icon-pulse-shadow {
+  0% {
+    box-shadow: 0 0 0 0 rgba($color-success-strong, 0.35);
+  }
+
+  60% {
+    box-shadow: 0 0 0 11px rgba($color-success-strong, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 11px rgba($color-success-strong, 0);
+  }
+}

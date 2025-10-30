@@ -1,0 +1,40 @@
+$page-padding-top: 8rem;
+$page-padding-horizontal: 2rem;
+$page-padding-bottom: 2rem;
+$bottom-navbar-height: 40px;
+$container-max-width: 1080px;
+$page-layout-content-gap: clamp(1.5rem, 3vw, 2.5rem);
+
+.page-container {
+  background: $page-background;
+  height: calc(100dvh - 50px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($color-primary, 0.4) transparent;
+  padding: $page-padding-top $page-padding-bottom;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($color-primary, 0.4);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba($color-primary, 0.6);
+    }
+  }
+}
+
+.page-container-content {
+  margin: 0 auto;
+  max-width: $container-max-width;
+  display: flex;
+  flex-direction: column;
+  gap: $page-layout-content-gap;
+}

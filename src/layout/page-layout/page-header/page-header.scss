@@ -1,0 +1,31 @@
+$heading-gap: clamp(1rem, 2vw, 1.5rem);
+$subtitle-max-width: 44rem;
+$page-header-gap: clamp(1rem, 2.2vw, 1.75rem);
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: $page-header-gap;
+}
+
+.page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: $heading-gap;
+  align-items: center;
+  text-align: center;
+}
+
+.page-title {
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 800;
+  color: $color-title;
+}
+
+.page-subtitle {
+  color: $color-subtitle;
+  font-size: clamp(1rem, 2.1vw, 1.1rem);
+  line-height: 1.7;
+  max-width: $subtitle-max-width;
+  text-align: center;
+}
