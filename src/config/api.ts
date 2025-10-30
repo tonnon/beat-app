@@ -1,4 +1,6 @@
-const DEFAULT_API_BASE_URL = 'https://api-beatapp.oleandrosantos.me';
+const isBrowserEnvironment = typeof window !== 'undefined';
+
+const DEFAULT_API_BASE_URL = isBrowserEnvironment ? '' : 'https://api-beatapp.oleandrosantos.me';
 
 const runtimeBaseUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
   ? import.meta.env.VITE_API_BASE_URL
