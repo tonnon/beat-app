@@ -152,17 +152,21 @@ function DefaultTextfield({
 
 	return (
 		<div className={fieldClass}>
-			<label className="app-textfield-label" htmlFor={id}>
-				<span className="app-textfield-label-content">
-					{label}
-					{isRequired ? (
-						<span aria-hidden="true" className="app-textfield-required-indicator">
-							*
-						</span>
-					) : null}
-				</span>
-				{labelSuffix}
-			</label>
+			<div className="app-textfield-label-wrapper">
+				<label className="app-textfield-label" htmlFor={id}>
+					<span className="app-textfield-label-content">
+						{label}
+						{isRequired ? (
+							<span aria-hidden="true" className="app-textfield-required-indicator">
+								*
+							</span>
+						) : null}
+					</span>
+				</label>
+				{labelSuffix ? (
+					<span className="app-textfield-label-suffix">{labelSuffix}</span>
+				) : null}
+			</div>
 
 			<input
 				id={id}
@@ -354,17 +358,22 @@ function DatePickerTextfield({
 
 	return (
 		<div className={fieldClass}>
-			<label className="app-textfield-label" htmlFor={id}>
-				<span className="app-textfield-label-content">
-					{label}
-					{isRequired ? (
-						<span aria-hidden="true" className="app-textfield-required-indicator">
-							*
-						</span>
-					) : null}
-				</span>
-				{labelSuffix}
-			</label>
+			<div className="app-textfield-label-wrapper">
+				<label className="app-textfield-label" htmlFor={id}>
+					<span className="app-textfield-label-content">
+						{label}
+						{isRequired ? (
+							<span aria-hidden="true" className="app-textfield-required-indicator">
+								*
+							</span>
+						) : null}
+					</span>
+				</label>
+				{labelSuffix ? (
+					<span className="app-textfield-label-suffix">{labelSuffix}</span>
+				) : null}
+			</div>
+
 			<LocalizationProvider
 				dateAdapter={AdapterDayjs}
 				adapterLocale={adapterLocale}
