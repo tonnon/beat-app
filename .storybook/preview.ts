@@ -1,6 +1,6 @@
 import type { Preview } from '@storybook/react-vite'
 import '@radix-ui/themes/styles.css'
-import '../src/index.scss'
+import '../src/styles/index.scss'
 
 const preview: Preview = {
   parameters: {

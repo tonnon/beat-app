@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertCircleIcon, ExclamationIcon } from '@/components/icons/Icons';
+import { AlertCircleIcon, CheckIcon, ExclamationIcon } from '@/components/icons/Icons';
 import './warning.scss';
 
 type WarningVariant = 'error' | 'success' | 'important';
@@ -26,9 +26,11 @@ export default function Warning({ variant = 'error', message, title, className }
     );
   }
 
+  const IconComponent = variant === 'success' ? CheckIcon : AlertCircleIcon;
+
   return (
     <div className={classes} role="alert">
-      <AlertCircleIcon className="warning-icon" size={20} />
+      <IconComponent className="warning-icon" size={20} />
       <p className="warning-message">{message}</p>
     </div>
   );

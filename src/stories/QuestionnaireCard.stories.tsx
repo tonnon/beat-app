@@ -1,53 +1,20 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import Card from '@/components/card/Card';
-import type { CardStatus } from '@/components/card/Card';
+import type { Meta } from '@storybook/react';
 
-const meta: Meta<typeof Card> = {
-  title: 'Components/Card/Card',
-  component: Card,
-  args: {
-    responsesLabel: 'Respuestas',
-    continueLabel: 'Continuar',
+// This file previously duplicated the Card stories. The consolidated
+// version now lives in `Card.stories.tsx`. We keep this stub so existing
+// references resolve, but we hide it from Storybook navigation.
+
+const meta = {
+  title: 'Deprecated/QuestionnaireCard',
+  parameters: {
+    docs: {
+      disable: true,
+    },
+    chromatic: { disableSnapshot: true },
+    options: {
+      showPanel: false,
+    },
   },
-  tags: ['autodocs'],
-};
+} satisfies Meta;
 
 export default meta;
-
-type Story = StoryObj<typeof Card>;
-
-type CardStoryArgs = {
-  status: CardStatus;
-  progress: number;
-};
-
-const createArgs = ({ status, progress }: CardStoryArgs) => ({
-  id: `${status}-${progress}`,
-  title: 'Datos demográficos',
-  status,
-  statusLabel:
-    status === 'completed'
-      ? 'Completado'
-      : status === 'in_progress'
-        ? 'En curso'
-        : 'Sin iniciar',
-  progress,
-});
-
-export const Completed: Story = {
-  args: {
-    ...createArgs({ status: 'completed', progress: 100 }),
-  },
-};
-
-export const InProgress: Story = {
-  args: {
-    ...createArgs({ status: 'in_progress', progress: 65 }),
-  },
-};
-
-export const NotStarted: Story = {
-  args: {
-    ...createArgs({ status: 'not_started', progress: 0 }),
-  },
-};
