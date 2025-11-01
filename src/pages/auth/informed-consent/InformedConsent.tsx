@@ -8,7 +8,7 @@ import Button from '@/components/button/Button';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
 import Link from '@/components/link/Link';
 import Warning from '@/components/warning/Warning';
-import { confirmConsent, ApiError, type ConfirmConsentPayload } from '@/services/auth/authService';
+import { confirmConsent, ApiError, type ConfirmConsentPayload, registerUser, type RegisterUserPayload, type RegisterUserResponse } from '@/services/auth/authService';
 import { useApiErrorTranslation } from '@/hooks/useApiErrorTranslation';
 import './informed-consent.scss';
 
@@ -19,9 +19,11 @@ type InformedConsentFooterProps = {
   readonly onSuccess?: () => void;
   readonly onShowConsentText?: () => void;
   readonly onBack?: () => void;
+  readonly registrationPayload?: Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'> | null;
+  readonly onUserRegistered?: (userId: string) => void;
 };
 
-export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onShowConsentText, onBack }: InformedConsentFooterProps) {
+export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onShowConsentText, onBack, registrationPayload, onUserRegistered }: InformedConsentFooterProps) {
   const { t } = useTranslation<'auth'>('auth');
   const { translateApiError } = useApiErrorTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,6 +32,10 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
   
   const ICON_SIZE = 18;
   const backIcon = <ArrowLeftIcon width={ICON_SIZE} height={ICON_SIZE} />;
+
+  const registerMutation = useMutation<RegisterUserResponse, Error, RegisterUserPayload>({
+    mutationFn: registerUser,
+  });
 
   const consentMutation = useMutation({
     mutationFn: confirmConsent,
@@ -73,12 +79,12 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
 
   const handleSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>((event) => {
     event.preventDefault();
-    if (isSubmitting || !userId) {
+    if (isSubmitting || registerMutation.isPending) {
       return;
     }
 
     const form = event.currentTarget;
-    
+
     const fullName = (form.querySelector('#informed-consent-name') as HTMLInputElement)?.value?.trim();
     const dni = (form.querySelector('#informed-consent-dni') as HTMLInputElement)?.value?.trim();
     const birthDateRaw = (form.querySelector('#informed-consent-birthdate') as HTMLInputElement)?.value;
@@ -96,16 +102,58 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
     setError(null);
     setIsSubmitting(true);
 
-    const payload: ConfirmConsentPayload = {
-      userId,
-      fullName,
-      dni,
-      ...(birthDate ? { birthDate } : {}),
-    };
-    consentMutation.mutate(payload);
+    void (async () => {
+      let ensuredUserId = userId;
 
-    onSubmit?.(event);
-  }, [consentMutation, isSubmitting, onSubmit, userId]);
+      if (!ensuredUserId) {
+        if (!registrationPayload) {
+          setIsSubmitting(false);
+          setError(t('signupScreen.errors.registrationFailed'));
+          return;
+        }
+
+        try {
+          const registerPayload: RegisterUserPayload = {
+            ...registrationPayload,
+            fullName,
+            dni,
+            birthDate: birthDate ?? null,
+          };
+
+          const result = await registerMutation.mutateAsync(registerPayload);
+          ensuredUserId = result.userId;
+          onUserRegistered?.(result.userId);
+        } catch (err) {
+          setIsSubmitting(false);
+
+          if (err instanceof ApiError) {
+            setError(translateApiError(err.originalMessage));
+          } else if (err instanceof Error) {
+            setError(err.message || t('signupScreen.errors.registrationFailed'));
+          } else {
+            setError(t('signupScreen.errors.registrationFailed'));
+          }
+          return;
+        }
+      }
+
+      if (!ensuredUserId) {
+        setIsSubmitting(false);
+        setError(t('signupScreen.errors.registrationFailed'));
+        return;
+      }
+
+      const payload: ConfirmConsentPayload = {
+        userId: ensuredUserId,
+        fullName,
+        dni,
+        ...(birthDate ? { birthDate } : {}),
+      };
+
+      consentMutation.mutate(payload);
+      onSubmit?.(event);
+    })();
+  }, [consentMutation, isSubmitting, onSubmit, registerMutation, registrationPayload, t, translateApiError, userId, onUserRegistered]);
 
 
   const handleConsentLinkClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
@@ -195,8 +243,8 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           className="dialog-actions-primary"
           type="submit"
           form={formId}
-          loading={isSubmitting}
-          disabled={isSubmitting || !consentAccepted}
+          loading={isSubmitting || registerMutation.isPending}
+          disabled={isSubmitting || registerMutation.isPending || !consentAccepted}
         />
       </div>
     </div>

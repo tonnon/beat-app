@@ -81,7 +81,81 @@ export interface RegisterUserPayload {
   email: string;
   codeCompany: string;
   password: string;
-  locale?: string;
+  fullName: string;
+  dni: string;
+  birthDate?: string | null;
+}
+
+export async function checkEmail(email: string, signal?: AbortSignal): Promise<void> {
+  const url = `${resolveApiUrl(API_PATHS.checkEmail)}?email=${encodeURIComponent(email)}&_=${Date.now()}`;
+
+  try {
+    const response = await fetch(url, { cache: 'no-store', signal });
+    const successfulResponse = await ensureSuccessfulResponse(response);
+    const isAlreadyRegistered = await parseCheckEmailResult(successfulResponse);
+
+    if (isAlreadyRegistered) {
+      throw new ApiError('Email already exists', 'Email already exists');
+    }
+  } catch (error) {
+    throw mapToApiError(error);
+  }
+}
+
+async function parseCheckEmailResult(response: Response): Promise<boolean> {
+  try {
+    const parsed = await response.clone().json();
+
+    if (typeof parsed === 'boolean') {
+      return parsed;
+    }
+
+    if (typeof parsed === 'string') {
+      return normalizeBooleanString(parsed);
+    }
+
+    if (parsed && typeof parsed === 'object') {
+      const candidate = parsed as Record<string, unknown>;
+
+      for (const key of ['exists', 'emailExists', 'isRegistered', 'emailAlreadyExists']) {
+        const value = candidate[key];
+
+        if (typeof value === 'boolean') {
+          return value;
+        }
+
+        if (typeof value === 'string' && normalizeBooleanString(value)) {
+          return true;
+        }
+      }
+    }
+  } catch {
+    const textPayload = (await response.clone().text()).trim();
+
+    if (textPayload) {
+      return normalizeBooleanString(textPayload);
+    }
+  }
+
+  return false;
+}
+
+function normalizeBooleanString(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized === 'true' || normalized === 'yes') {
+    return true;
+  }
+
+  if (normalized === 'false' || normalized === 'no') {
+    return false;
+  }
+
+  return normalized.includes('already') || normalized.includes('registr') || normalized.includes('exist');
 }
 
 export interface PasswordResetRequestPayload {
@@ -250,7 +324,6 @@ export async function registerUser(payload: RegisterUserPayload): Promise<Regist
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept-Language': payload.locale || 'es',
       },
       body: JSON.stringify(payload),
     }));

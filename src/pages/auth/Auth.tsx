@@ -16,6 +16,7 @@ import InformedConsentText from './informed-consent/informed-consent-text/Inform
 import SingupSuccess from './singup-success/SingupSuccess';
 import type { TermsOfUseSection } from './terms-of-use/TermsOfUse';
 import { confirmEmail, type ConfirmEmailPayload, ApiError } from '@/services/auth/authService';
+import type { RegisterUserPayload } from '@/services/auth/authService';
 import './auth.scss';
 
 type AuthView = 'login' | 'forgotPassword' | 'signup' | 'termsOfUse' | 'privacyPolicy' | 'informedConsent' | 'informedConsentText' | 'confirmEmail' | 'signupSuccess';
@@ -54,6 +55,7 @@ export default function Auth() {
   const [signupTermsAccepted, setSignupTermsAccepted] = useState(false);
   const [signupPrivacyAccepted, setSignupPrivacyAccepted] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [registrationPayload, setRegistrationPayload] = useState<Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'> | null>(null);
   const formId = 'auth-dialog-form';
   const ICON_SIZE = 18;
   const trimmedUserId = useMemo(() => (userId ?? '').trim(), [userId]);
@@ -74,6 +76,7 @@ export default function Auth() {
     setSignupTermsAccepted(false);
     setSignupPrivacyAccepted(false);
     clearSignupErrors();
+    setRegistrationPayload(null);
   }, [clearSignupErrors]);
 
   const clearConfirmEmailError = useCallback(() => {
@@ -207,8 +210,9 @@ export default function Auth() {
     setView('informedConsent');
   }, []);
 
-  const handleUserIdReceived = useCallback((id: string) => {
+  const handleUserRegistered = useCallback((id: string) => {
     setUserId(id);
+    setRegistrationPayload(null);
   }, []);
 
   const handleBackFromInformedConsent = useCallback(() => {
@@ -294,6 +298,11 @@ export default function Auth() {
     setSignupConfirmPassword(nextConfirmPassword);
     clearSignupErrors();
   }, [clearSignupErrors]);
+
+  const handleRegistrationDataReady = useCallback((payload: Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'>) => {
+    setRegistrationPayload(payload);
+    setUserId(null);
+  }, []);
 
   const handleSignupErrorChange = useCallback((nextError: string | null) => {
     setSignupError(nextError);
@@ -432,6 +441,8 @@ export default function Auth() {
             onShowConsentText={handleShowConsentText}
             onBack={handleBackFromInformedConsent}
             onSuccess={handleConsentConfirmed}
+            registrationPayload={registrationPayload}
+            onUserRegistered={handleUserRegistered}
           />
         );
 
@@ -531,6 +542,8 @@ export default function Auth() {
     trimmedUserId,
     userId,
     view,
+    registrationPayload,
+    handleUserRegistered,
   ]);
 
   const dialogTitle = view === 'termsOfUse'
@@ -596,7 +609,7 @@ export default function Auth() {
           onTermsAcceptedChange={handleSignupTermsAcceptedChange}
           onPrivacyAcceptedChange={handleSignupPrivacyAcceptedChange}
           onContinueToInformedConsent={handleContinueToInformedConsent}
-          onUserIdReceived={handleUserIdReceived}
+          onRegistrationDataReady={handleRegistrationDataReady}
         />
       ) : view === 'termsOfUse' ? (
         <TermsOfUse sections={termsOfUseTranslation.sections} />

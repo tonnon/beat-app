@@ -16,6 +16,7 @@ const API_PATHS = {
   me: '/api/users/me',
   confirmEmail: '/api/users/confirm-email',
   register: '/api/users/register',
+  checkEmail: '/api/users/check-email',
   confirmConsent: '/api/users/confirm-consent',
 } as const;
 

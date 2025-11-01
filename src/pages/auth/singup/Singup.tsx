@@ -6,10 +6,12 @@ import Textfield from '@/components/textfield/Textfield';
 import Checkbox from '@/components/checkbox/Checkbox';
 import Link from '@/components/link/Link';
 import Warning from '@/components/warning/Warning';
-import { registerUser, ApiError } from '@/services/auth/authService';
+import { checkEmail, ApiError, type RegisterUserPayload } from '@/services/auth/authService';
 import { useApiErrorTranslation } from '@/hooks/useApiErrorTranslation';
 
 import './singup.scss';
+
+type PendingRegistrationData = Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'>;
 
 interface SingupProps {
   readonly formId: string;
@@ -26,7 +28,6 @@ interface SingupProps {
   readonly onErrorChange?: (error: string | null) => void;
   readonly onRawErrorChange?: (rawError: string | null) => void;
   readonly onSubmittingChange?: (isSubmitting: boolean) => void;
-  readonly onUserIdReceived?: (userId: string) => void;
   readonly onShowTerms: () => void;
   readonly onShowPrivacy: () => void;
   readonly termsAccepted: boolean;
@@ -34,6 +35,7 @@ interface SingupProps {
   readonly onTermsAcceptedChange: (accepted: boolean) => void;
   readonly onPrivacyAcceptedChange: (accepted: boolean) => void;
   readonly onContinueToInformedConsent: () => void;
+  readonly onRegistrationDataReady?: (payload: PendingRegistrationData) => void;
 }
 
 export default function Singup({
@@ -51,7 +53,6 @@ export default function Singup({
   onErrorChange,
   onRawErrorChange,
   onSubmittingChange,
-  onUserIdReceived,
   onShowTerms,
   onShowPrivacy,
   termsAccepted,
@@ -59,6 +60,7 @@ export default function Singup({
   onTermsAcceptedChange,
   onPrivacyAcceptedChange,
   onContinueToInformedConsent,
+  onRegistrationDataReady,
 }: SingupProps) {
   const { t, i18n } = useTranslation<'auth'>('auth');
   const { translateApiError } = useApiErrorTranslation();
@@ -70,32 +72,36 @@ export default function Singup({
   const [error, setError] = useState<string | null>(initialError);
   const [rawError, setRawError] = useState<string | null>(initialRawError);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailHasError, setEmailHasError] = useState(false);
 
   const onErrorChangeRef = useRef(onErrorChange);
+  const onRegistrationDataReadyRef = useRef<SingupProps['onRegistrationDataReady']>(onRegistrationDataReady);
+  const registrationDataRef = useRef<PendingRegistrationData | null>(null);
   
   useEffect(() => {
     onErrorChangeRef.current = onErrorChange;
   }, [onErrorChange]);
 
-  const registerMutation = useMutation({
-    mutationFn: registerUser,
-    onSuccess: (data) => {
+  useEffect(() => {
+    onRegistrationDataReadyRef.current = onRegistrationDataReady;
+  }, [onRegistrationDataReady]);
+
+  const checkEmailMutation = useMutation({
+    mutationFn: async (emailToCheck: string) => {
+      await checkEmail(emailToCheck);
+    },
+    onSuccess: () => {
       updateSubmitting(false);
-      if (data?.userId) {
-        onUserIdReceived?.(data.userId);
+      setEmailHasError(false);
+      if (registrationDataRef.current) {
+        onRegistrationDataReadyRef.current?.(registrationDataRef.current);
+        registrationDataRef.current = null;
       }
       onContinueToInformedConsent();
     },
     onError: (err: Error) => {
       updateSubmitting(false);
-      
-      if (err instanceof ApiError) {
-        const translatedError = translateApiError(err.originalMessage);
-        updateError(translatedError, err.originalMessage);
-      } else {
-        const errorMessage = err.message || t('signupScreen.errors.registrationFailed');
-        updateError(errorMessage, errorMessage);
-      }
+      handleEmailCheckError(err);
     },
   });
 
@@ -142,11 +148,35 @@ export default function Singup({
     onSubmittingChange?.(nextSubmitting);
   }, [onSubmittingChange]);
 
+  const handleEmailCheckError = useCallback((err: Error | ApiError) => {
+    if (err instanceof ApiError) {
+      const translatedError = translateApiError(err.originalMessage);
+      const normalizedMessage = err.originalMessage?.toLowerCase?.() ?? '';
+      if (normalizedMessage.includes('email already')) {
+        setEmailHasError(true);
+      }
+      updateError(translatedError, err.originalMessage);
+      return;
+    }
+
+    setEmailHasError(false);
+    if (err instanceof Error) {
+      const errorMessage = err.message || t('signupScreen.errors.registrationFailed');
+      updateError(errorMessage, errorMessage);
+      return;
+    }
+
+    setEmailHasError(false);
+    updateError(t('signupScreen.errors.registrationFailed'));
+  }, [translateApiError, t, updateError]);
+
   const handleEmailChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextEmail = event.target.value;
     setEmail(nextEmail);
     onEmailChange?.(nextEmail);
     updateError(null);
+    setEmailHasError(false);
+
   }, [onEmailChange, updateError]);
 
   const handleInviteCodeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -237,15 +267,17 @@ export default function Singup({
     }
 
     updateError(null);
+    setEmailHasError(false);
     updateSubmitting(true);
 
-    registerMutation.mutate({
+    registrationDataRef.current = {
       email: trimmedEmail,
       codeCompany: trimmedInviteCode,
       password: trimmedPassword,
-      locale: i18n.language,
-    });
-  }, [confirmPassword, email, i18n.language, inviteCode, isSubmitting, password, privacyAccepted, registerMutation, t, termsAccepted, updateError, updateSubmitting]);
+    };
+
+    checkEmailMutation.mutate(trimmedEmail);
+  }, [checkEmailMutation, confirmPassword, email, inviteCode, isSubmitting, password, privacyAccepted, t, termsAccepted, updateError, updateSubmitting]);
 
   const termsAgreementLabel = useMemo(() => (
     <>
@@ -292,6 +324,7 @@ export default function Singup({
             value={email}
             onChange={handleEmailChange}
             disabled={isSubmitting}
+            error={emailHasError}
             required
           />
           <Textfield
