@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react-vite'
 import '@radix-ui/themes/styles.css'
 import '../src/styles/index.scss'
+import { withStorybookProviders } from '../src/stories/decorators/withStorybookProviders'
 
 const preview: Preview = {
   parameters: {
@@ -33,6 +34,7 @@ const preview: Preview = {
       test: 'todo'
     }
   },
+  decorators: [withStorybookProviders],
 };
 
 export default preview;

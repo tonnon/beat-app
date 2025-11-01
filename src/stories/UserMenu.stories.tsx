@@ -1,21 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { MemoryRouter } from 'react-router-dom';
-import { I18nextProvider } from 'react-i18next';
 import UserMenu from '@/components/navbar/top-navbar/user-menu/UserMenu';
-import i18n from '@/i18n/config';
+import { withStorybookProviders } from '@/stories/decorators/withStorybookProviders';
 
 const meta = {
   title: 'Components/UserMenu',
   component: UserMenu,
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <I18nextProvider i18n={i18n}>
-          <Story />
-        </I18nextProvider>
-      </MemoryRouter>
-    ),
-  ],
+  decorators: [withStorybookProviders],
   parameters: {
     layout: 'centered',
     docs: {

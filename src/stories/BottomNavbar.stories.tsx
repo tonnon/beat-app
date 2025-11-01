@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import BottomNavbar from '@/components/navbar/bottom-navbar/BottomNavbar';
 
 const meta: Meta<typeof BottomNavbar> = {
@@ -16,13 +15,6 @@ const meta: Meta<typeof BottomNavbar> = {
     },
   },
   tags: ['autodocs'],
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <Story />
-      </MemoryRouter>
-    ),
-  ],
   argTypes: {
     activeIndex: {
       control: { type: 'number', min: 0, max: 4 },

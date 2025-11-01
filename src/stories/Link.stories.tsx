@@ -1,21 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { MemoryRouter } from 'react-router-dom';
 import Link from '@/components/link/Link';
-import i18n from '@/i18n/config';
-import { I18nextProvider } from 'react-i18next';
+import { withStorybookProviders } from '@/stories/decorators/withStorybookProviders';
 
 const meta = {
   title: 'Components/Link',
   component: Link,
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <I18nextProvider i18n={i18n}>
-          <Story />
-        </I18nextProvider>
-      </MemoryRouter>
-    ),
-  ],
+  decorators: [withStorybookProviders],
   parameters: {
     layout: 'centered',
     docs: {

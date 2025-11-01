@@ -1,18 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { I18nextProvider } from 'react-i18next';
 import LanguageSelector from '@/components/navbar/top-navbar/language-selector/LanguageSelector';
 import i18n from '@/i18n/config';
+import { withStorybookProviders } from '@/stories/decorators/withStorybookProviders';
 
 const meta = {
   title: 'Components/LanguageSelector',
   component: LanguageSelector,
-  decorators: [
-    (Story) => (
-      <I18nextProvider i18n={i18n}>
-        <Story />
-      </I18nextProvider>
-    ),
-  ],
+  decorators: [withStorybookProviders],
   parameters: {
     layout: 'centered',
     docs: {

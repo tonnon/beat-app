@@ -1,24 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter } from 'react-router-dom';
 import TopNavbar from '@/components/navbar/top-navbar/TopNavbar';
-import { AuthDialogProvider } from '@/context/auth/AuthDialogContext';
 import i18n from '@/i18n/config';
+import { withStorybookProviders } from '@/stories/decorators/withStorybookProviders';
 
 const meta = {
   title: 'Components/TopNavbar',
   component: TopNavbar,
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <AuthDialogProvider>
-          <I18nextProvider i18n={i18n}>
-            <Story />
-          </I18nextProvider>
-        </AuthDialogProvider>
-      </MemoryRouter>
-    ),
-  ],
+  decorators: [withStorybookProviders],
   parameters: {
     layout: 'fullscreen',
     docs: {
