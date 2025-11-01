@@ -51,6 +51,11 @@ $dialog-mobile-buttons-gap: 0.75rem;
   flex-direction: column;
   z-index: $dialog-content-z-index;
   padding: $dialog-content-padding;
+  outline: none;
+
+  &:focus-visible {
+    outline: none;
+  }
 }
 
 .dialog-header {
