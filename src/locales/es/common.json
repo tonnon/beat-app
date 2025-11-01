@@ -14,5 +14,11 @@
   "homeHeroTitle": "Beat App, la herramienta que promueve la salud mental",
   "homeHeroDescriptionPrimary": "Creada por un equipo de psicólogos/as y expertos/as en salud mental que fomenta la salud mental en el entorno laboral.",
   "homeHeroDescriptionSecondary": "Beat App estudia cómo el estrés y la presión afectan a los trabajadores y propone una serie de ejercicios para mejorar la salud mental de estos usuarios/as.",
-  "homeHeroCta": "Quiero participar"
+  "homeHeroCta": "Quiero participar",
+  "sessionExpired": {
+    "title": "Sesión expirada",
+    "subtitle": "Tu sesión ha expirado. Para continuar, vuelve a iniciar sesión desde la página principal.",
+    "message": "Serás redirigido al inicio para que puedas iniciar sesión nuevamente.",
+    "action": "Ir al inicio"
+  }
 }
