@@ -2,9 +2,9 @@ import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/protected-route/ProtectedRoute';
 import PublicRoute from '@/components/public-route/PublicRoute';
 import HomePage from '@/pages/home/HomePage';
-import UserPage from '@/pages/user-default/UserPage';
-import AdminPage from '@/pages/user-admin/AdminPage';
-import EnterpriseAdminPage from '@/pages/user-enterprise-admin/EntrepriseAdminPage';
+import EmployeePage from '@/pages/user-employee/UserEmployeePage';
+import AdminPage from '@/pages/user-admin/UserAdminPage';
+import ManagerPage from '@/pages/user-manager/UserManagerPage';
 
 export default function AppRoutes() {
   return (
@@ -21,7 +21,7 @@ export default function AppRoutes() {
         path="/daily" 
         element={
           <ProtectedRoute>
-            <UserPage />
+            <EmployeePage />
           </ProtectedRoute>
         } 
       />
@@ -37,7 +37,7 @@ export default function AppRoutes() {
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            <EnterpriseAdminPage />
+            <ManagerPage />
           </ProtectedRoute>
         } 
       />
