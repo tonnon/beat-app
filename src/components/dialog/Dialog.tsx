@@ -1,6 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { CloseIcon } from '@/components/icons/Icons';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref, UIEvent } from 'react';
 import './dialog.scss';
 
 export interface DialogProps {
@@ -10,6 +10,9 @@ export interface DialogProps {
   subtitle: string;
   children: ReactNode;
   actions?: ReactNode;
+  afterBody?: ReactNode;
+  bodyRef?: Ref<HTMLDivElement>;
+  onBodyScroll?: (event: UIEvent<HTMLDivElement>) => void;
 }
 
 export default function Dialog({
@@ -19,6 +22,9 @@ export default function Dialog({
   subtitle,
   children,
   actions,
+  afterBody,
+  bodyRef,
+  onBodyScroll,
 }: DialogProps) {
   const hasHeaderContent = Boolean(title || subtitle);
 
@@ -44,7 +50,14 @@ export default function Dialog({
             </header>
           ) : null}
 
-          <div className="dialog-body">{children}</div>
+          <div className="dialog-body" ref={bodyRef} onScroll={onBodyScroll}>
+            {children}
+          </div>
+          {afterBody ? (
+            <div className="dialog-body-addon">
+              {afterBody}
+            </div>
+          ) : null}
           {actions ? (
             <footer className="dialog-actions">
               {actions}

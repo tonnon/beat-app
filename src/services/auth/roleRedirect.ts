@@ -1,8 +1,8 @@
 const RAW_ROLE_DESTINATIONS: Record<string, string> = {
   Employee: '/daily',
-  Administrator: '/admin',
   Manager: '/dashboard',
-  Editor: '/dashboard',
+  Administrator: '/admin',
+  Editor: '/admin',
 };
 
 const normalizeRole = (role: string): string => {

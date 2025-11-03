@@ -57,6 +57,10 @@ $checkbox-font-size: 1rem;
   justify-content: center;
   color: currentColor;
 
+  [data-state='checked'] & {
+    color: $color-white;
+  }
+
   svg {
     width: $checkbox-icon-size;
     height: $checkbox-icon-size;

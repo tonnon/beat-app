@@ -16,6 +16,7 @@ type ButtonBaseProps = {
   readonly spinnerSize?: SpinnerProps['size'];
   readonly icon?: ReactNode;
   readonly iconPosition?: 'left' | 'right';
+  readonly animateOnEnable?: boolean;
 };
 
 type NativeButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
@@ -35,9 +36,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({
   icon,
   iconPosition = 'left',
   type = 'button',
+  animateOnEnable = false,
   ...nativeProps
 }, ref) {
   const isDisabled = nativeProps.disabled ?? false;
+  const isActuallyDisabled = loading || isDisabled;
   const derivedSpinnerSize = spinnerSize ?? (size === 'lg' ? 'md' : 'sm');
   const classes = [
     'app-button',
@@ -76,8 +79,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({
       ref={ref}
       type={type}
       className={classes}
-      disabled={loading || isDisabled}
+      disabled={isActuallyDisabled}
       data-loading={loading ? 'true' : undefined}
+      data-animate-on-enable={animateOnEnable ? 'true' : undefined}
+      data-enabled-state={isActuallyDisabled ? 'false' : 'true'}
       {...nativeProps}
     >
       {content}

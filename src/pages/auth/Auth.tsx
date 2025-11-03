@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import Dialog from '@/components/dialog/Dialog';
+import ProgressLinear from '@/components/progress/progress-linear/ProgressLinear';
 import { useAuthDialog } from '@/context/auth/AuthDialogContext';
 import Button from '@/components/button/Button';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
@@ -8,18 +9,17 @@ import { useTranslation } from 'react-i18next';
 import Login from './login/Login';
 import ForgotPassword from './forgot-password/ForgotPassword';
 import Singup from './singup/Singup';
-import TermsOfUse from './terms-of-use/TermsOfUse';
+import TermsOfUse, { type TermsOfUseSection } from './terms-of-use/TermsOfUse';
 import PrivacyPolicy from './privacy-policy/PrivacyPolicy';
 import { InformedConsentFooter } from './informed-consent/InformedConsent';
 import ConfirmEmail from './confirm-email/ConfirmEmail';
 import InformedConsentText from './informed-consent/informed-consent-text/InformedConsentText';
 import SingupSuccess from './singup-success/SingupSuccess';
-import type { TermsOfUseSection } from './terms-of-use/TermsOfUse';
 import { confirmEmail, type ConfirmEmailPayload, ApiError } from '@/services/auth/authService';
 import type { RegisterUserPayload } from '@/services/auth/authService';
+import { useConsentProgress } from './hooks/useConsentProgress';
+import { type AuthView } from './constants';
 import './auth.scss';
-
-type AuthView = 'login' | 'forgotPassword' | 'signup' | 'termsOfUse' | 'privacyPolicy' | 'informedConsent' | 'informedConsentText' | 'confirmEmail' | 'signupSuccess';
 
 type TermsOfUseTranslation = {
   readonly title: string;
@@ -56,6 +56,11 @@ export default function Auth() {
   const [signupPrivacyAccepted, setSignupPrivacyAccepted] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [registrationPayload, setRegistrationPayload] = useState<Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'> | null>(null);
+  const dialogBodyRef = useRef<HTMLDivElement | null>(null);
+  const documentCompletionRef = useRef({
+    terms: false,
+    privacy: false,
+  });
   const formId = 'auth-dialog-form';
   const ICON_SIZE = 18;
   const trimmedUserId = useMemo(() => (userId ?? '').trim(), [userId]);
@@ -75,6 +80,10 @@ export default function Auth() {
     setSignupSubmitting(false);
     setSignupTermsAccepted(false);
     setSignupPrivacyAccepted(false);
+    documentCompletionRef.current = {
+      terms: false,
+      privacy: false,
+    };
     clearSignupErrors();
     setRegistrationPayload(null);
   }, [clearSignupErrors]);
@@ -91,15 +100,13 @@ export default function Auth() {
       return null;
     }
 
-    if (normalized === 'invalid email or code' || (normalized.includes('invalid email') && normalized.includes('code'))) {
-      return 'confirmEmail.errors.invalidEmailOrCode';
-    }
+    const invalidCodeMatchers = [
+      /invalid\s+email.*code/, // english and generic permutations
+      /correo\s+electrónico.*código.*inválid/i, // spanish
+      /correu\s+electrònic.*codi.*invàlid/i, // catalan
+    ];
 
-    if (normalized.includes('correo electrónico') && normalized.includes('código') && normalized.includes('inválid')) {
-      return 'confirmEmail.errors.invalidEmailOrCode';
-    }
-
-    if (normalized.includes('correu electrònic') && normalized.includes('codi') && normalized.includes('invàlid')) {
+    if (invalidCodeMatchers.some((matcher) => matcher.test(normalized))) {
       return 'confirmEmail.errors.invalidEmailOrCode';
     }
 
@@ -151,13 +158,16 @@ export default function Auth() {
     },
   });
 
-  useEffect(() => {
-    if (view === 'termsOfUse' || view === 'privacyPolicy') {
-      const dialogBody = document.querySelector<HTMLElement>('.dialog-body');
-
-      dialogBody?.scrollTo({ top: 0 });
-    }
-  }, [view]);
+  const {
+    handleDialogBodyScroll,
+    resetScrollProgress,
+    currentScrollableKey,
+    currentProgressValue,
+    termsDocumentCompleted,
+    privacyDocumentCompleted,
+    consentTextCompleted,
+    readingCompleted,
+  } = useConsentProgress({ view, dialogBodyRef });
 
   const handleLoginEmailChange = useCallback((nextEmail: string) => {
     setLoginEmail(nextEmail);
@@ -196,10 +206,6 @@ export default function Auth() {
     setView('termsOfUse');
   }, [clearSignupErrors]);
 
-  const handleBackFromTerms = useCallback(() => {
-    setView('signup');
-  }, []);
-
   const handleShowPrivacy = useCallback(() => {
     clearSignupErrors();
     setView('privacyPolicy');
@@ -208,6 +214,10 @@ export default function Auth() {
   const handleContinueToInformedConsent = useCallback(() => {
     setSignupSubmitting(false);
     setView('informedConsent');
+  }, []);
+
+  const handleBackFromTerms = useCallback(() => {
+    setView('signup');
   }, []);
 
   const handleUserRegistered = useCallback((id: string) => {
@@ -263,7 +273,6 @@ export default function Auth() {
   const handleSignupPrivacyAcceptedChange = useCallback((accepted: boolean) => {
     setSignupPrivacyAccepted(accepted);
   }, []);
-
 
   const handleBackFromPrivacy = useCallback(() => {
     setView('signup');
@@ -345,8 +354,32 @@ export default function Auth() {
     );
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) {
+      resetScrollProgress();
+      documentCompletionRef.current = {
+        terms: false,
+        privacy: false,
+      };
+      return;
+    }
+
+    if (view === 'signup' && termsDocumentCompleted && !documentCompletionRef.current.terms) {
+      documentCompletionRef.current.terms = true;
+      setSignupTermsAccepted(true);
+    }
+
+    if (view === 'signup' && privacyDocumentCompleted && !documentCompletionRef.current.privacy) {
+      documentCompletionRef.current.privacy = true;
+      setSignupPrivacyAccepted(true);
+    }
+  }, [isOpen, view, termsDocumentCompleted, privacyDocumentCompleted]);
+
   const dialogActions = useMemo<ReactNode>(() => {
     const backIcon = <ArrowLeftIcon size={ICON_SIZE} />;
+    const isTermsRead = termsDocumentCompleted;
+    const isPrivacyRead = privacyDocumentCompleted;
+    const isConsentTextRead = consentTextCompleted;
 
     switch (view) {
       case 'forgotPassword':
@@ -414,6 +447,8 @@ export default function Auth() {
             onClick={handleBackFromTerms}
             icon={backIcon}
             iconPosition="left"
+            disabled={!isTermsRead}
+            animateOnEnable
           />,
           { contentAlign: 'start', buttonsAlign: 'start' }
         );
@@ -429,6 +464,8 @@ export default function Auth() {
             onClick={handleBackFromPrivacy}
             icon={backIcon}
             iconPosition="left"
+            disabled={!isPrivacyRead}
+            animateOnEnable
           />,
           { contentAlign: 'start', buttonsAlign: 'start' }
         );
@@ -443,6 +480,8 @@ export default function Auth() {
             onSuccess={handleConsentConfirmed}
             registrationPayload={registrationPayload}
             onUserRegistered={handleUserRegistered}
+            readingCompleted={readingCompleted}
+            animateBackButton
           />
         );
 
@@ -472,6 +511,8 @@ export default function Auth() {
             onClick={handleBackFromConsentText}
             icon={backIcon}
             iconPosition="left"
+            disabled={!isConsentTextRead}
+            animateOnEnable
           />,
           { contentAlign: 'start', buttonsAlign: 'start' }
         );
@@ -535,9 +576,11 @@ export default function Auth() {
     handleShowConsentText,
     loginSubmitting,
     renderActionsWrapper,
+    privacyDocumentCompleted,
     signupPrivacyAccepted,
     signupSubmitting,
     signupTermsAccepted,
+    termsDocumentCompleted,
     t,
     trimmedUserId,
     userId,
@@ -546,106 +589,137 @@ export default function Auth() {
     handleUserRegistered,
   ]);
 
-  const dialogTitle = view === 'termsOfUse'
-    ? termsOfUseTranslation.title
-    : view === 'privacyPolicy'
-      ? privacyPolicyTranslation.title
-    : view === 'informedConsent'
-      ? t('informedConsent.title')
-    : view === 'forgotPassword'
-      ? t('forgotPasswordScreen.title')
-      : view === 'signup'
-        ? t('signupScreen.title')
-        : view === 'confirmEmail'
-          ? t('confirmEmail.title')
-          : view === 'signupSuccess'
-            ? ''
-            : t('title');
+  const dialogTitle = useMemo(() => {
+    switch (view) {
+      case 'termsOfUse':
+        return termsOfUseTranslation.title;
+      case 'privacyPolicy':
+        return privacyPolicyTranslation.title;
+      case 'informedConsent':
+        return t('informedConsent.title');
+      case 'informedConsentText':
+        return 'Preparados, listos… ¡Ya!';
+      case 'forgotPassword':
+        return t('forgotPasswordScreen.title');
+      case 'signup':
+        return t('signupScreen.title');
+      case 'confirmEmail':
+        return t('confirmEmail.title');
+      case 'signupSuccess':
+        return '';
+      default:
+        return t('title');
+    }
+  }, [
+    privacyPolicyTranslation.title,
+    t,
+    termsOfUseTranslation.title,
+    view,
+  ]);
 
-  const dialogSubtitle = view === 'termsOfUse'
-    ? termsOfUseTranslation.subtitle
-    : view === 'privacyPolicy'
-      ? ''
-    : view === 'informedConsent'
-      ? t('informedConsent.subtitle')
-    : view === 'forgotPassword'
-      ? t('forgotPasswordScreen.subtitle')
-      : view === 'signup'
-        ? t('signupScreen.subtitle')
-        : view === 'confirmEmail'
-          ? t('confirmEmail.subtitle')
-          : view === 'signupSuccess'
-            ? ''
-            : t('subtitle');
+  const dialogSubtitle = useMemo(() => {
+    switch (view) {
+      case 'termsOfUse':
+        return termsOfUseTranslation.subtitle;
+      case 'privacyPolicy':
+        return '';
+      case 'informedConsent':
+        return t('informedConsent.subtitle');
+      case 'informedConsentText':
+        return 'Ir a la intervención';
+      case 'forgotPassword':
+        return t('forgotPasswordScreen.subtitle');
+      case 'signup':
+        return t('signupScreen.subtitle');
+      case 'confirmEmail':
+        return t('confirmEmail.subtitle');
+      case 'signupSuccess':
+        return '';
+      default:
+        return t('subtitle');
+    }
+  }, [
+    t,
+    termsOfUseTranslation.subtitle,
+    view,
+  ]);
+
+  const afterBody = currentScrollableKey
+    ? <ProgressLinear value={currentProgressValue} variant="soft" />
+    : undefined;
+
   return (
     <>
       <Dialog
-      isOpen={isOpen}
-      onOpenChange={setDialogOpen}
-      title={dialogTitle}
-      subtitle={dialogSubtitle}
-      actions={dialogActions}
-    >
-      {view === 'signup' ? (
-        <Singup
-          formId={formId}
-          initialEmail={signupEmail}
-          initialInviteCode={inviteCode}
-          initialPassword={signupPassword}
-          initialConfirmPassword={signupConfirmPassword}
-          initialError={signupError}
-          initialRawError={signupRawError}
-          onEmailChange={handleSignupEmailChange}
-          onInviteCodeChange={handleInviteCodeChange}
-          onPasswordChange={handleSignupPasswordChange}
-          onConfirmPasswordChange={handleSignupConfirmPasswordChange}
-          onErrorChange={handleSignupErrorChange}
-          onRawErrorChange={handleSignupRawErrorChange}
-          onSubmittingChange={handleSignupSubmittingChange}
-          onShowTerms={handleShowTerms}
-          onShowPrivacy={handleShowPrivacy}
-          termsAccepted={signupTermsAccepted}
-          privacyAccepted={signupPrivacyAccepted}
-          onTermsAcceptedChange={handleSignupTermsAcceptedChange}
-          onPrivacyAcceptedChange={handleSignupPrivacyAcceptedChange}
-          onContinueToInformedConsent={handleContinueToInformedConsent}
-          onRegistrationDataReady={handleRegistrationDataReady}
-        />
-      ) : view === 'termsOfUse' ? (
-        <TermsOfUse sections={termsOfUseTranslation.sections} />
-      ) : view === 'privacyPolicy' ? (
-        <PrivacyPolicy />
-      ) : view === 'informedConsent' ? (
-        null
-      ) : view === 'confirmEmail' ? (
-        <ConfirmEmail
-          userId={userId ?? ''}
-          onUserIdChange={handleConfirmEmailUserIdChange}
-          errorTranslationKey={confirmEmailErrorKey}
-          errorMessage={confirmEmailErrorMessage}
-          isSubmitting={confirmEmailMutation.isPending}
-        />
-      ) : view === 'informedConsentText' ? (
-        <InformedConsentText />
-      ) : view === 'signupSuccess' ? (
-        <SingupSuccess />
-      ) : view === 'forgotPassword' ? (
-        <ForgotPassword
-          formId={formId}
-          initialEmail={forgotEmail}
-          onSubmittingChange={handleForgotSubmittingChange}
-          onEmailChange={handleForgotEmailChange}
-        />
-      ) : (
-        <Login
-          formId={formId}
-          onForgotPassword={handleNavigateToForgotPassword}
-          onSubmittingChange={handleLoginSubmittingChange}
-          onEmailChange={handleLoginEmailChange}
-          initialEmail={loginEmail}
-        />
-      )}
-    </Dialog>
+        isOpen={isOpen}
+        onOpenChange={setDialogOpen}
+        title={dialogTitle}
+        subtitle={dialogSubtitle}
+        actions={dialogActions}
+        afterBody={afterBody}
+        bodyRef={dialogBodyRef}
+        onBodyScroll={handleDialogBodyScroll}
+      >
+        {view === 'signup' ? (
+          <Singup
+            formId={formId}
+            initialEmail={signupEmail}
+            initialInviteCode={inviteCode}
+            initialPassword={signupPassword}
+            initialConfirmPassword={signupConfirmPassword}
+            initialError={signupError}
+            initialRawError={signupRawError}
+            onEmailChange={handleSignupEmailChange}
+            onInviteCodeChange={handleInviteCodeChange}
+            onPasswordChange={handleSignupPasswordChange}
+            onConfirmPasswordChange={handleSignupConfirmPasswordChange}
+            onErrorChange={handleSignupErrorChange}
+            onRawErrorChange={handleSignupRawErrorChange}
+            onSubmittingChange={handleSignupSubmittingChange}
+            onShowTerms={handleShowTerms}
+            onShowPrivacy={handleShowPrivacy}
+            termsAccepted={signupTermsAccepted}
+            privacyAccepted={signupPrivacyAccepted}
+            onTermsAcceptedChange={handleSignupTermsAcceptedChange}
+            onPrivacyAcceptedChange={handleSignupPrivacyAcceptedChange}
+            onContinueToInformedConsent={handleContinueToInformedConsent}
+            onRegistrationDataReady={handleRegistrationDataReady}
+          />
+        ) : view === 'termsOfUse' ? (
+          <TermsOfUse sections={termsOfUseTranslation.sections} />
+        ) : view === 'privacyPolicy' ? (
+          <PrivacyPolicy />
+        ) : view === 'informedConsent' ? (
+          null
+        ) : view === 'confirmEmail' ? (
+          <ConfirmEmail
+            userId={userId ?? ''}
+            onUserIdChange={handleConfirmEmailUserIdChange}
+            errorTranslationKey={confirmEmailErrorKey}
+            errorMessage={confirmEmailErrorMessage}
+            isSubmitting={confirmEmailMutation.isPending}
+          />
+        ) : view === 'informedConsentText' ? (
+          <InformedConsentText />
+        ) : view === 'signupSuccess' ? (
+          <SingupSuccess />
+        ) : view === 'forgotPassword' ? (
+          <ForgotPassword
+            formId={formId}
+            initialEmail={forgotEmail}
+            onSubmittingChange={handleForgotSubmittingChange}
+            onEmailChange={handleForgotEmailChange}
+          />
+        ) : (
+          <Login
+            formId={formId}
+            onForgotPassword={handleNavigateToForgotPassword}
+            onSubmittingChange={handleLoginSubmittingChange}
+            onEmailChange={handleLoginEmailChange}
+            initialEmail={loginEmail}
+          />
+        )}
+      </Dialog>
     </>
   );
 }

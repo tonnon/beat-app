@@ -114,6 +114,10 @@ $dialog-mobile-buttons-gap: 0.75rem;
   padding: $dialog-body-padding;
 }
 
+.dialog-body-addon {
+  margin-top: 1rem;
+}
+
 .dialog-body::-webkit-scrollbar {
   width: $dialog-body-scrollbar-width;
 }

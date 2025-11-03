@@ -373,14 +373,14 @@ export default function Singup({
         <Checkbox
           wrapperClassName="auth-agreement"
           label={termsAgreementLabel}
-          disabled={isSubmitting}
+          disabled
           checked={termsAccepted}
           onCheckedChange={handleTermsCheckedChange}
         />
         <Checkbox
           wrapperClassName="auth-agreement"
           label={privacyAgreementLabel}
-          disabled={isSubmitting}
+          disabled
           checked={privacyAccepted}
           onCheckedChange={handlePrivacyCheckedChange}
         />

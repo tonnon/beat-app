@@ -8,7 +8,7 @@ import Button from '@/components/button/Button';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
 import Link from '@/components/link/Link';
 import Warning from '@/components/warning/Warning';
-import { confirmConsent, ApiError, type ConfirmConsentPayload, registerUser, type RegisterUserPayload, type RegisterUserResponse } from '@/services/auth/authService';
+import { ApiError, registerUser, type RegisterUserPayload, type RegisterUserResponse } from '@/services/auth/authService';
 import { useApiErrorTranslation } from '@/hooks/useApiErrorTranslation';
 import './informed-consent.scss';
 
@@ -21,38 +21,24 @@ type InformedConsentFooterProps = {
   readonly onBack?: () => void;
   readonly registrationPayload?: Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'> | null;
   readonly onUserRegistered?: (userId: string) => void;
+  readonly readingCompleted?: boolean;
+  readonly animateBackButton?: boolean;
 };
 
-export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onShowConsentText, onBack, registrationPayload, onUserRegistered }: InformedConsentFooterProps) {
+export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onShowConsentText, onBack, registrationPayload, onUserRegistered, readingCompleted = false, animateBackButton = false }: InformedConsentFooterProps) {
   const { t } = useTranslation<'auth'>('auth');
   const { translateApiError } = useApiErrorTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [consentAccepted, setConsentAccepted] = useState(false);
   
   const ICON_SIZE = 18;
   const backIcon = <ArrowLeftIcon width={ICON_SIZE} height={ICON_SIZE} />;
 
-  const registerMutation = useMutation<RegisterUserResponse, Error, RegisterUserPayload>({
+  const {
+    mutateAsync: registerUserAsync,
+    isPending: isRegisterPending,
+  } = useMutation<RegisterUserResponse, Error, RegisterUserPayload>({
     mutationFn: registerUser,
-  });
-
-  const consentMutation = useMutation({
-    mutationFn: confirmConsent,
-    onSuccess: () => {
-      setIsSubmitting(false);
-      onSuccess?.();
-    },
-    onError: (err: Error) => {
-      setIsSubmitting(false);
-      
-      if (err instanceof ApiError) {
-        const translatedError = translateApiError(err.originalMessage);
-        setError(translatedError);
-      } else {
-        setError(err.message || t('informedConsent.errors.confirmationFailed'));
-      }
-    },
   });
 
   const handleNameBeforeInput = useCallback((event: FormEvent<HTMLInputElement>) => {
@@ -79,7 +65,7 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
 
   const handleSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>((event) => {
     event.preventDefault();
-    if (isSubmitting || registerMutation.isPending) {
+    if (isSubmitting || isRegisterPending) {
       return;
     }
 
@@ -103,16 +89,14 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
     setIsSubmitting(true);
 
     void (async () => {
-      let ensuredUserId = userId;
+      try {
+        let ensuredUserId = userId;
 
-      if (!ensuredUserId) {
-        if (!registrationPayload) {
-          setIsSubmitting(false);
-          setError(t('signupScreen.errors.registrationFailed'));
-          return;
-        }
+        if (!ensuredUserId) {
+          if (!registrationPayload) {
+            throw new Error(t('signupScreen.errors.registrationFailed'));
+          }
 
-        try {
           const registerPayload: RegisterUserPayload = {
             ...registrationPayload,
             fullName,
@@ -120,50 +104,36 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
             birthDate: birthDate ?? null,
           };
 
-          const result = await registerMutation.mutateAsync(registerPayload);
+          const result = await registerUserAsync(registerPayload);
           ensuredUserId = result.userId;
           onUserRegistered?.(result.userId);
-        } catch (err) {
-          setIsSubmitting(false);
-
-          if (err instanceof ApiError) {
-            setError(translateApiError(err.originalMessage));
-          } else if (err instanceof Error) {
-            setError(err.message || t('signupScreen.errors.registrationFailed'));
-          } else {
-            setError(t('signupScreen.errors.registrationFailed'));
-          }
-          return;
         }
-      }
 
-      if (!ensuredUserId) {
+        if (!ensuredUserId) {
+          throw new Error(t('signupScreen.errors.registrationFailed'));
+        }
+
+        onSubmit?.(event);
+        onSuccess?.();
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setError(translateApiError(err.originalMessage));
+        } else if (err instanceof Error) {
+          setError(err.message || t('informedConsent.errors.confirmationFailed'));
+        } else {
+          setError(t('informedConsent.errors.confirmationFailed'));
+        }
+      } finally {
         setIsSubmitting(false);
-        setError(t('signupScreen.errors.registrationFailed'));
-        return;
       }
-
-      const payload: ConfirmConsentPayload = {
-        userId: ensuredUserId,
-        fullName,
-        dni,
-        ...(birthDate ? { birthDate } : {}),
-      };
-
-      consentMutation.mutate(payload);
-      onSubmit?.(event);
     })();
-  }, [consentMutation, isSubmitting, onSubmit, registerMutation, registrationPayload, t, translateApiError, userId, onUserRegistered]);
+  }, [isRegisterPending, isSubmitting, onSubmit, onSuccess, registerUserAsync, registrationPayload, t, translateApiError, userId, onUserRegistered]);
 
 
   const handleConsentLinkClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     onShowConsentText?.();
   }, [onShowConsentText]);
-
-  const handleConsentChange = useCallback((checked: boolean) => {
-    setConsentAccepted(checked);
-  }, []);
 
   const checkboxLabel = useMemo(() => {
     const acceptLabelText = t('informedConsent.acceptLabel');
@@ -189,13 +159,6 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
   return (
     <div className="dialog-actions-content dialog-actions-content--align-start">
       <form id={formId} className="informed-consent-footer" onSubmit={handleSubmit}>
-        <Checkbox
-          wrapperClassName="informed-consent-checkbox"
-          label={checkboxLabel}
-          checked={consentAccepted}
-          onCheckedChange={handleConsentChange}
-          required
-        />
         <Textfield
           id="informed-consent-name"
           label={t('informedConsent.nameField.label')}
@@ -222,6 +185,13 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           wrapperClassName="informed-consent-birthdate-field"
           name="birthdate"
         />
+        <Checkbox
+          wrapperClassName="informed-consent-checkbox"
+          label={checkboxLabel}
+          checked={readingCompleted}
+          disabled
+          required
+        />
         {error && <Warning message={error} variant="error" />}
       </form>
       <div className="dialog-actions-buttons dialog-actions-buttons--align-start">
@@ -234,7 +204,8 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           onClick={onBack}
           icon={backIcon}
           iconPosition="left"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !readingCompleted}
+          animateOnEnable={animateBackButton}
         />
         <Button
           variant="solid"
@@ -243,8 +214,8 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           className="dialog-actions-primary"
           type="submit"
           form={formId}
-          loading={isSubmitting || registerMutation.isPending}
-          disabled={isSubmitting || registerMutation.isPending || !consentAccepted}
+          loading={isSubmitting || isRegisterPending}
+          disabled={isSubmitting || isRegisterPending || !readingCompleted}
         />
       </div>
     </div>

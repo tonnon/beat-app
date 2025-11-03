@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import ProgressCircle from '@/components/progress/progress-circle/ProgressCircle';
+import ProgressLinear from '@/components/progress/progress-linear/ProgressLinear';
 
 const meta = {
-  title: 'Components/ProgressCircle',
+  title: 'Components/Progress Indicators',
   component: ProgressCircle,
   parameters: {
     layout: 'centered',
@@ -29,20 +30,37 @@ const meta = {
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type CircleStory = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const CircleDefault: CircleStory = {};
 
-export const Completed: Story = {
+export const CircleCompleted: CircleStory = {
   args: {
     value: 100,
   },
 };
 
-export const CustomSizeAndColor: Story = {
+export const CircleCustomSizeAndColor: CircleStory = {
   args: {
     value: 45,
     size: 140,
     color: '#079FA4',
+  },
+};
+
+type LinearStory = StoryObj<typeof ProgressLinear>;
+
+export const LinearSoft: LinearStory = {
+  args: {
+    value: 45,
+    label: 'Soft variant',
+  },
+};
+
+export const LinearSolid: LinearStory = {
+  args: {
+    value: 75,
+    label: 'Solid variant',
+    variant: 'solid',
   },
 };

@@ -1,0 +1,46 @@
+.progress-linear {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+
+  &-label {
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  &-root {
+    position: relative;
+    height: 8px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--color-surface-soft, rgba(17, 24, 39, 0.08));
+  }
+
+  &-indicator {
+    height: 100%;
+    width: 100%;
+    border-radius: inherit;
+    background: var(--color-primary-500);
+    transition: transform 120ms ease, background-color 120ms ease;
+  }
+
+  &-root--solid {
+    background: var(--color-primary-700, rgba(255, 255, 255, 0.16));
+  }
+
+  &-indicator--solid {
+    background: var(--color-primary-300, rgba(255, 255, 255, 0.92));
+  }
+
+  &-root--soft {
+    background: var(--color-primary-100, rgba(255, 214, 0, 0.24));
+    border: 1px solid rgba(255, 214, 0, 0.32);
+  }
+
+  &-indicator--soft {
+    background: var(--color-primary-500, #ffd200);
+    box-shadow: 0 0 12px rgba(255, 214, 0, 0.45);
+  }
+}

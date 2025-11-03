@@ -5,6 +5,12 @@
   padding-right: 0.5rem;
 }
 
+.terms-of-use-heading-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .terms-of-use-section {
   display: flex;
   flex-direction: column;

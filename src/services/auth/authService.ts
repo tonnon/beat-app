@@ -231,17 +231,6 @@ export interface RegisterUserResponse {
   email: string;
 }
 
-export interface ConfirmConsentPayload {
-  userId: string;
-  fullName: string;
-  dni: string;
-  birthDate?: string;
-}
-
-export interface ConfirmConsentResponse {
-  success: boolean;
-}
-
 export interface ConfirmEmailPayload {
   email: string;
   code: string;
@@ -318,24 +307,6 @@ export async function confirmEmail(payload: ConfirmEmailPayload): Promise<Confir
 
 export async function registerUser(payload: RegisterUserPayload): Promise<RegisterUserResponse> {
   const url = resolveApiUrl(API_PATHS.register);
-  
-  try {
-    const response = await ensureSuccessfulResponse(await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    }));
-
-    return response.json();
-  } catch (error) {
-    throw mapToApiError(error);
-  }
-}
-
-export async function confirmConsent(payload: ConfirmConsentPayload): Promise<ConfirmConsentResponse> {
-  const url = resolveApiUrl(API_PATHS.confirmConsent);
   
   try {
     const response = await ensureSuccessfulResponse(await fetch(url, {
