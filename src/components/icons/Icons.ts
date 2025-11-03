@@ -3,7 +3,7 @@ export type { IconBaseProps } from 'react-icons';
 export {
   FaUserAlt as UserIcon,
   FaRegStar as StarIcon,
-  FaPen as PenIcon
+  FaPen as PenIcon,
 } from 'react-icons/fa';
 
 export {
@@ -16,11 +16,13 @@ export {
   IoSchoolOutline as EducationIcon,
   IoSettingsOutline as SettingsIcon,
   IoArrowBack as ArrowLeftIcon,
-  IoCheckmarkCircleSharp as CheckIcon
+  IoCheckmarkCircleSharp as CheckIcon,
+  IoFlagOutline  as FlagIcon
 } from 'react-icons/io5';
 
 export { 
-  IoMdClose as CloseIcon
+  IoMdClose as CloseIcon,
+  IoMdCalendar as CalendarIcon
 } from "react-icons/io";
 
 export { 
@@ -28,10 +30,6 @@ export {
   AiFillExclamationCircle as ExclamationCircleIcon,
   AiOutlineExclamationCircle as ExclamationIcon
 } from "react-icons/ai";
-
-export {
-  VscGraph as GraphIcon,
-} from 'react-icons/vsc';
 
 export {
   PiHeadCircuit as HeadCircuitIcon,

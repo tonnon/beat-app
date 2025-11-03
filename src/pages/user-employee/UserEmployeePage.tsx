@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import PageLayout from '@/layout/page-layout/PageLayout';
 import PageHeader from '@/layout/page-layout/page-header/PageHeader';
 import Dropdown from '@/components/dropdown/Dropdown';
 import type { DropdownItem } from '@/components/dropdown/Dropdown';
 import StatusBadge from '@/components/status-badge/StatusBadge';
 import QuestionnaireGrid from '@/layout/card-grid/CardGrid';
 import type { CardModel, CardStatus } from '@/components/card/Card';
-import BottomNavbar from '@/components/navbar/bottom-navbar/BottomNavbar';
 
 type QuestionnaireTitleKey =
   | 'demographic_data'
@@ -154,7 +152,7 @@ export default function UserEmployeePage() {
   const continueLabel = t('actions.continue' as QuestionnaireActionKey);
 
   return (
-    <PageLayout>
+    <>
       <PageHeader
         title={t('header.title' as QuestionnairesHeaderKey)}
         subtitle={t('header.subtitle' as QuestionnairesHeaderKey)}
@@ -193,8 +191,6 @@ export default function UserEmployeePage() {
           emptyDescription={t('empty.description' as QuestionnairesEmptyKey)}
         />
       </section>
-      
-      <BottomNavbar />
-    </PageLayout>
+    </>
   );
 }

@@ -3,11 +3,11 @@ import type { CSSProperties, MouseEvent } from 'react';
 import type { IconType } from 'react-icons';
 import { useNavigate } from 'react-router-dom';
 import {
+  FlagIcon,
   ChecklistIcon,
   EducationIcon,
   HeadCircuitIcon,
-  GraphIcon,
-  CommentIcon,
+  CalendarIcon,
 } from '@/components/icons/Icons';
 import './bottom-navbar.scss';
 
@@ -38,12 +38,12 @@ export type BottomNavbarItem = {
   route?: string;
 };
 
-const NAVBAR_ITEMS: BottomNavbarItem[] = [
-  { icon: ChecklistIcon, label: 'Checklist', route: '/questionnaires' },
-  { icon: EducationIcon, label: 'Education' },
-  { icon: HeadCircuitIcon, label: 'Head Circuit', route: '/pratice' },
-  { icon: GraphIcon, label: 'Graphic' },
-  { icon: CommentIcon, label: 'Comment' },
+export const DEFAULT_BOTTOM_NAVBAR_ITEMS: BottomNavbarItem[] = [
+  { icon: FlagIcon, label: 'Daily', route: '/daily' },
+  { icon: ChecklistIcon, label: 'Questionnaires', route: '/questionnaires' },
+  { icon: EducationIcon, label: 'Education', route: '/education' },
+  { icon: HeadCircuitIcon, label: 'Pratice', route: '/pratice' },
+  { icon: CalendarIcon, label: 'Calendar', route: '/calendar' },
 ];
 
 function clampIndex(index: number | undefined, length: number): number {
@@ -63,13 +63,18 @@ export default function BottomNavbar<
 }: BottomNavbarProps<Item>) {
   const navigate = useNavigate();
 
-  const defaultItems = useMemo(
+  const resolvedItems = useMemo(
+    () => (items?.length ? items : (DEFAULT_BOTTOM_NAVBAR_ITEMS as Item[])),
+    [items]
+  );
+
+  const computedItems = useMemo(
     () =>
-      NAVBAR_ITEMS.map((item) => {
+      resolvedItems.map((item) => {
         const { route, onClick } = item;
 
         if (!route) {
-          return item as Item;
+          return item;
         }
 
         return {
@@ -84,14 +89,9 @@ export default function BottomNavbar<
             event.preventDefault();
             navigate(route);
           },
-        };
-      }) as Item[],
-    [navigate]
-  );
-
-  const computedItems = useMemo(
-    () => (items?.length ? items : defaultItems),
-    [items, defaultItems]
+        } as Item;
+      }),
+    [resolvedItems, navigate]
   );
 
   const isControlled = activeIndex !== undefined;
