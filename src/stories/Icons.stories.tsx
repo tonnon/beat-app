@@ -3,7 +3,6 @@ import {
   ChecklistIcon,
   CommentIcon,
   EducationIcon,
-  GraphIcon,
   HeadCircuitIcon,
   UserIcon,
   StarIcon,
@@ -66,7 +65,6 @@ A centralized icon system built on top of React Icons with consistent sizing and
 - **ChecklistIcon** - Task/checklist indicator
 - **CommentIcon** - Comment/message indicator
 - **EducationIcon** - Education/learning related
-- **GraphIcon** - Graph/statistics visualization
 - **HeadCircuitIcon** - AI/technology related
 - **UserIcon** - User/profile avatar placeholder
 - **StarIcon** - Awards, badges or achievements
@@ -100,7 +98,6 @@ const ICONS = [
   { component: ChecklistIcon, name: 'ChecklistIcon' },
   { component: CommentIcon, name: 'CommentIcon' },
   { component: EducationIcon, name: 'EducationIcon' },
-  { component: GraphIcon, name: 'GraphIcon' },
   { component: HeadCircuitIcon, name: 'HeadCircuitIcon' },
   { component: UserIcon, name: 'UserIcon' },
   { component: StarIcon, name: 'StarIcon' },
@@ -247,10 +244,6 @@ export const UsageExamples: Story = {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <HeadCircuitIcon size={24} style={{ color: '#079FA4' }} />
             <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>AI Circuit</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <GraphIcon size={24} style={{ color: '#079FA4' }} />
-            <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>Analytics</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <CommentIcon size={24} style={{ color: '#079FA4' }} />
