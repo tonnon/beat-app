@@ -12,6 +12,10 @@ import { useApiErrorTranslation } from '@/hooks/useApiErrorTranslation';
 import { getDestinationForRole } from '@/services/auth/roleRedirect';
 import './login.scss';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const REQUIRED_FIELDS_ERROR_KEY = 'signupScreen.errors.requiredFields';
+const INVALID_FIELDS_ERROR_KEY = 'signupScreen.errors.invalidFields';
+
 interface LoginProps {
   readonly formId: string;
   readonly onForgotPassword: (email: string) => void;
@@ -43,6 +47,7 @@ export default function Login({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAccessToken, setPendingAccessToken] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<{ source: 'email' | 'password'; message: string } | null>(null);
   const { translateApiError } = useApiErrorTranslation();
 
   const {
@@ -65,20 +70,73 @@ export default function Login({
     setError(null);
     setEmailError(false);
     setPasswordError(false);
+    setFieldError(null);
   }, []);
 
   const handleEmailChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    setEmail(event.target.value);
+    const nextEmail = event.target.value;
+    setEmail(nextEmail);
     setEmailError(false);
-    setError(null);
-    onEmailChange?.(event.target.value);
-  }, [onEmailChange]);
+    if (fieldError?.source === 'email') {
+      setFieldError(null);
+      setError(null);
+    }
+    onEmailChange?.(nextEmail);
+  }, [fieldError?.source, onEmailChange]);
 
   const handlePasswordChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    setPassword(event.target.value);
+    const nextPassword = event.target.value;
+    setPassword(nextPassword);
     setPasswordError(false);
-    setError(null);
-  }, []);
+    if (fieldError?.source === 'password') {
+      setFieldError(null);
+      setError(null);
+    }
+  }, [fieldError?.source]);
+
+  const handleEmailBlur = useCallback(() => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      const message = t(REQUIRED_FIELDS_ERROR_KEY);
+      setEmailError(true);
+      setFieldError({ source: 'email', message });
+      setError(message);
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      const message = t(INVALID_FIELDS_ERROR_KEY);
+      setEmailError(true);
+      setFieldError({ source: 'email', message });
+      setError(message);
+      return;
+    }
+
+    setEmailError(false);
+    if (fieldError?.source === 'email') {
+      setFieldError(null);
+      setError(null);
+    }
+  }, [email, fieldError?.source, t]);
+
+  const handlePasswordBlur = useCallback(() => {
+    const trimmedPassword = password.trim();
+
+    if (!trimmedPassword) {
+      const message = t(REQUIRED_FIELDS_ERROR_KEY);
+      setPasswordError(true);
+      setFieldError({ source: 'password', message });
+      setError(message);
+      return;
+    }
+
+    setPasswordError(false);
+    if (fieldError?.source === 'password') {
+      setFieldError(null);
+      setError(null);
+    }
+  }, [fieldError?.source, password, t]);
 
   const handleForgotPasswordClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -96,14 +154,24 @@ export default function Login({
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
 
-    const hasEmailError = trimmedEmail === '';
+    const hasEmailError = trimmedEmail === '' || !EMAIL_REGEX.test(trimmedEmail);
     const hasPasswordError = trimmedPassword === '';
 
     setEmailError(hasEmailError);
     setPasswordError(hasPasswordError);
 
     if (hasEmailError || hasPasswordError) {
+      const message = hasEmailError
+        ? t(trimmedEmail ? INVALID_FIELDS_ERROR_KEY : REQUIRED_FIELDS_ERROR_KEY)
+        : t(REQUIRED_FIELDS_ERROR_KEY);
+      setFieldError({ source: hasEmailError ? 'email' : 'password', message });
+      setError(message);
       return;
+    }
+
+    if (fieldError) {
+      setFieldError(null);
+      setError(null);
     }
 
     updateSubmitting(true);
@@ -116,22 +184,26 @@ export default function Login({
       setAccessToken(nextAccessToken);
       setRefreshToken(nextRefreshToken);
     } catch (caughtError) {
-      setEmailError(false);
-      setPasswordError(false);
+      setEmailError(true);
+      setPasswordError(true);
 
+      setFieldError(null);
+
+      const identificationFailedMessage = t('loginScreen.errors.identificationFailed');
       if (caughtError instanceof ApiError) {
-        setError(translateApiError(caughtError.originalMessage));
+        setError(identificationFailedMessage);
       } else if (caughtError instanceof Error) {
-        setError(translateApiError(caughtError.message));
+        const translatedMessage = translateApiError(caughtError.message);
+        setError(translatedMessage || identificationFailedMessage);
       } else {
-        setError(t('errors.generic'));
+        setError(identificationFailedMessage);
       }
 
       setAccessToken(null);
       setRefreshToken(null);
       updateSubmitting(false);
     }
-  }, [email, isSubmitting, password, setAccessToken, setRefreshToken, t, translateApiError, updateSubmitting]);
+  }, [email, fieldError, isSubmitting, password, setAccessToken, setRefreshToken, t, translateApiError, updateSubmitting]);
 
   useEffect(() => {
     if (!pendingAccessToken || !isUserLoaded || !fetchedUser) {
@@ -147,6 +219,7 @@ export default function Login({
     setPassword('');
     setEmailError(false);
     setPasswordError(false);
+  setFieldError(null);
 
     const destination = getDestinationForRole(fetchedUser.role);
 
@@ -169,15 +242,18 @@ export default function Login({
     updateSubmitting(false);
 
     if (userDataError instanceof ApiError) {
+      setFieldError(null);
       setError(translateApiError(userDataError.originalMessage));
       return;
     }
 
     if (userDataError instanceof Error) {
+      setFieldError(null);
       setError(translateApiError(userDataError.message));
       return;
     }
 
+    setFieldError(null);
     setError(t('errors.generic'));
   }, [isUserError, pendingAccessToken, setAccessToken, setRefreshToken, t, translateApiError, updateSubmitting, userDataError]);
 
@@ -199,6 +275,7 @@ export default function Login({
             autoComplete="username"
             value={email}
             onChange={handleEmailChange}
+            onBlur={handleEmailBlur}
             disabled={isSubmitting}
             error={emailError}
             required
@@ -211,6 +288,7 @@ export default function Login({
             autoComplete="current-password"
             value={password}
             onChange={handlePasswordChange}
+            onBlur={handlePasswordBlur}
             disabled={isSubmitting}
             error={passwordError}
             required

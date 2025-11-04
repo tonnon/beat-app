@@ -12,7 +12,7 @@ export interface LinkProps extends Omit<RouterLinkProps, 'children'> {
   readonly labelKey?: TopNavbarTranslationKey;
   readonly label?: ReactNode;
   readonly onNavigate?: () => void;
-  readonly variant?: 'default' | 'subtle';
+  readonly variant?: 'default' | 'subtle' | 'important';
 }
 
 const BASE_CLASSNAME = 'top-navbar-link';

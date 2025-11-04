@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { ClipboardEvent, FormEvent, MouseEvent } from 'react';
+import type { ChangeEvent, ClipboardEvent, FormEvent, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import Checkbox from '@/components/checkbox/Checkbox';
@@ -8,6 +8,7 @@ import Button from '@/components/button/Button';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
 import Link from '@/components/link/Link';
 import Warning from '@/components/warning/Warning';
+import Tooltip from '@/components/tooltip/Tooltip';
 import { ApiError, registerUser, type RegisterUserPayload, type RegisterUserResponse } from '@/services/auth/authService';
 import { useApiErrorTranslation } from '@/hooks/useApiErrorTranslation';
 import './informed-consent.scss';
@@ -23,9 +24,32 @@ type InformedConsentFooterProps = {
   readonly onUserRegistered?: (userId: string) => void;
   readonly readingCompleted?: boolean;
   readonly animateBackButton?: boolean;
+  readonly fullName: string;
+  readonly dni: string;
+  readonly birthDate: Date | null;
+  readonly onFullNameChange: (value: string) => void;
+  readonly onDniChange: (value: string) => void;
+  readonly onBirthDateChange: (value: Date | null) => void;
 };
 
-export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onShowConsentText, onBack, registrationPayload, onUserRegistered, readingCompleted = false, animateBackButton = false }: InformedConsentFooterProps) {
+export function InformedConsentFooter({
+  formId,
+  userId,
+  onSubmit,
+  onSuccess,
+  onShowConsentText,
+  onBack,
+  registrationPayload,
+  onUserRegistered,
+  readingCompleted = false,
+  animateBackButton = false,
+  fullName,
+  dni,
+  birthDate,
+  onFullNameChange,
+  onDniChange,
+  onBirthDateChange,
+}: InformedConsentFooterProps) {
   const { t } = useTranslation<'auth'>('auth');
   const { translateApiError } = useApiErrorTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,26 +87,33 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
   }, []);
 
 
+  const handleFullNameInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    onFullNameChange(event.target.value);
+  }, [onFullNameChange]);
+
+  const handleDniInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    onDniChange(event.target.value);
+  }, [onDniChange]);
+
+  const handleBirthDateChange = useCallback((value: Date | null) => {
+    onBirthDateChange(value);
+  }, [onBirthDateChange]);
+
   const handleSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>((event) => {
     event.preventDefault();
     if (isSubmitting || isRegisterPending) {
       return;
     }
 
-    const form = event.currentTarget;
+    const trimmedFullName = fullName.trim();
+    const trimmedDni = dni.trim();
 
-    const fullName = (form.querySelector('#informed-consent-name') as HTMLInputElement)?.value?.trim();
-    const dni = (form.querySelector('#informed-consent-dni') as HTMLInputElement)?.value?.trim();
-    const birthDateRaw = (form.querySelector('#informed-consent-birthdate') as HTMLInputElement)?.value;
-
-    if (!fullName || !dni) {
+    if (!trimmedFullName || !trimmedDni) {
       return;
     }
 
-    const birthDate = birthDateRaw
-      ? birthDateRaw.includes('/')
-        ? birthDateRaw.split('/').reverse().join('-')
-        : birthDateRaw
+    const normalizedBirthDate = birthDate
+      ? `${birthDate.getFullYear()}-${String(birthDate.getMonth() + 1).padStart(2, '0')}-${String(birthDate.getDate()).padStart(2, '0')}`
       : undefined;
 
     setError(null);
@@ -99,9 +130,9 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
 
           const registerPayload: RegisterUserPayload = {
             ...registrationPayload,
-            fullName,
-            dni,
-            birthDate: birthDate ?? null,
+            fullName: trimmedFullName,
+            dni: trimmedDni,
+            birthDate: normalizedBirthDate ?? null,
           };
 
           const result = await registerUserAsync(registerPayload);
@@ -127,13 +158,36 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
         setIsSubmitting(false);
       }
     })();
-  }, [isRegisterPending, isSubmitting, onSubmit, onSuccess, registerUserAsync, registrationPayload, t, translateApiError, userId, onUserRegistered]);
+  }, [
+    birthDate,
+    dni,
+    fullName,
+    isRegisterPending,
+    isSubmitting,
+    onSubmit,
+    onSuccess,
+    registerUserAsync,
+    registrationPayload,
+    t,
+    translateApiError,
+    userId,
+    onUserRegistered,
+  ]);
 
 
   const handleConsentLinkClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     onShowConsentText?.();
   }, [onShowConsentText]);
+
+  const renderImportantLinkLabel = useCallback((labelText: string) => (
+    <>
+      {labelText}
+      <span aria-hidden="true" className="app-textfield-required-indicator">*</span>
+    </>
+  ), []);
+
+  const readingRequiredTooltipMessage = t('informedConsent.readingRequiredTooltip');
 
   const checkboxLabel = useMemo(() => {
     const acceptLabelText = t('informedConsent.acceptLabel');
@@ -146,15 +200,15 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
         {' '}
         <Link
           to="#"
-          label={linkText}
-          variant="subtle"
+          label={renderImportantLinkLabel(linkText)}
+          variant="important"
           onClick={handleConsentLinkClick}
         />
         {' '}
         {parts[1]}
       </>
     );
-  }, [handleConsentLinkClick, t]);
+  }, [handleConsentLinkClick, renderImportantLinkLabel, t]);
 
   return (
     <div className="dialog-actions-content dialog-actions-content--align-start">
@@ -168,6 +222,8 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           onBeforeInput={handleNameBeforeInput}
           onPaste={handleNamePaste}
           required
+          value={fullName}
+          onChange={handleFullNameInputChange}
         />
         <Textfield
           id="informed-consent-dni"
@@ -176,6 +232,8 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           wrapperClassName="informed-consent-dni-field"
           maxLength={9}
           required
+          value={dni}
+          onChange={handleDniInputChange}
         />
         <Textfield
           variant="date-picker"
@@ -184,14 +242,18 @@ export function InformedConsentFooter({ formId, userId, onSubmit, onSuccess, onS
           placeholder={t('informedConsent.birthdateField.placeholder')}
           wrapperClassName="informed-consent-birthdate-field"
           name="birthdate"
+          value={birthDate}
+          onDateChange={handleBirthDateChange}
         />
-        <Checkbox
-          wrapperClassName="informed-consent-checkbox"
-          label={checkboxLabel}
-          checked={readingCompleted}
-          disabled
-          required
-        />
+        <Tooltip content={readingRequiredTooltipMessage} delayDuration={0}>
+          <Checkbox
+            wrapperClassName="informed-consent-checkbox"
+            label={checkboxLabel}
+            checked={readingCompleted}
+            disabled
+            required
+          />
+        </Tooltip>
         {error && <Warning message={error} variant="error" />}
       </form>
       <div className="dialog-actions-buttons dialog-actions-buttons--align-start">

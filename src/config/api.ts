@@ -17,6 +17,7 @@ const API_PATHS = {
   confirmEmail: '/api/users/confirm-email',
   register: '/api/users/register',
   checkEmail: '/api/users/check-email',
+  checkCompanyCode: '/api/companies/check-code'
 } as const;
 
 const resolveApiUrl = (path: string) => `${API_BASE_URL}${path}`;

@@ -6,12 +6,69 @@ import Textfield from '@/components/textfield/Textfield';
 import Checkbox from '@/components/checkbox/Checkbox';
 import Link from '@/components/link/Link';
 import Warning from '@/components/warning/Warning';
-import { checkEmail, ApiError, type RegisterUserPayload } from '@/services/auth/authService';
+import { QuestionIcon } from '@/components/icons/Icons';
+import { checkEmail, checkCompanyCode, ApiError, type RegisterUserPayload } from '@/services/auth/authService';
 import { useApiErrorTranslation } from '@/hooks/useApiErrorTranslation';
+import Tooltip from '@/components/tooltip/Tooltip';
+import PasswordStrength, { type PasswordStrengthLevel } from '@/components/password-strength/PasswordStrength';
 
 import './singup.scss';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function computePasswordStrength(value: string): PasswordStrengthLevel | null {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const length = trimmedValue.length;
+  const hasLowercase = /[a-z]/.test(trimmedValue);
+  const hasUppercase = /[A-Z]/.test(trimmedValue);
+  const hasNumber = /\d/.test(trimmedValue);
+  const hasSymbol = /[^A-Za-z0-9]/.test(trimmedValue);
+  const checksPassed = Number(hasLowercase) + Number(hasUppercase) + Number(hasNumber) + Number(hasSymbol);
+
+  if (length < 8 || checksPassed < 3) {
+    return 'weak';
+  }
+
+  if (checksPassed === 3) {
+    return length >= 12 ? 'strong' : 'medium';
+  }
+
+  return length >= 10 ? 'strong' : 'medium';
+}
+
+function doPasswordsMismatch(passwordValue: string, confirmPasswordValue: string): boolean {
+  const trimmedPassword = passwordValue.trim();
+  const trimmedConfirm = confirmPasswordValue.trim();
+
+  if (!trimmedConfirm) {
+    return false;
+  }
+
+  return trimmedPassword !== trimmedConfirm;
+}
+
 type PendingRegistrationData = Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'>;
+
+type CheckEmailIntent = 'blur' | 'submit';
+
+interface CheckEmailVariables {
+  readonly email: string;
+  readonly intent: CheckEmailIntent;
+}
+
+interface CheckCompanyCodeVariables {
+  readonly code: string;
+  readonly intent: CheckEmailIntent;
+}
+
+type FieldErrorOverrides = Partial<Record<'emailHasError' | 'inviteCodeHasError' | 'passwordHasError' | 'confirmPasswordHasError', boolean>>;
+
+const INVALID_INVITE_CODE_RAW_MESSAGE = 'Invalid invitation code';
 
 interface SingupProps {
   readonly formId: string;
@@ -73,10 +130,17 @@ export default function Singup({
   const [rawError, setRawError] = useState<string | null>(initialRawError);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailHasError, setEmailHasError] = useState(false);
+  const [inviteCodeHasError, setInviteCodeHasError] = useState(false);
+  const [passwordHasError, setPasswordHasError] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrengthLevel | null>(computePasswordStrength(initialPassword));
+  const [confirmPasswordHasError, setConfirmPasswordHasError] = useState(false);
 
   const onErrorChangeRef = useRef(onErrorChange);
   const onRegistrationDataReadyRef = useRef<SingupProps['onRegistrationDataReady']>(onRegistrationDataReady);
   const registrationDataRef = useRef<PendingRegistrationData | null>(null);
+  const lastCheckedEmailRef = useRef<string>('');
+  const lastCheckedCompanyCodeRef = useRef<string>('');
+  const lastCompanyCodeValidityRef = useRef<boolean | null>(null);
   
   useEffect(() => {
     onErrorChangeRef.current = onErrorChange;
@@ -86,39 +150,82 @@ export default function Singup({
     onRegistrationDataReadyRef.current = onRegistrationDataReady;
   }, [onRegistrationDataReady]);
 
-  const checkEmailMutation = useMutation({
-    mutationFn: async (emailToCheck: string) => {
+  const checkEmailMutation = useMutation<void, Error | ApiError, CheckEmailVariables>({
+    mutationFn: async ({ email: emailToCheck }) => {
       await checkEmail(emailToCheck);
     },
-    onSuccess: () => {
-      updateSubmitting(false);
-      setEmailHasError(false);
-      if (registrationDataRef.current) {
-        onRegistrationDataReadyRef.current?.(registrationDataRef.current);
-        registrationDataRef.current = null;
+    onSuccess: (_data, variables) => {
+      const { intent, email: checkedEmail } = variables;
+      const trimmedCurrentEmail = email.trim();
+
+      if (intent === 'blur' && checkedEmail !== trimmedCurrentEmail) {
+        return;
       }
-      onContinueToInformedConsent();
+
+      setEmailHasError(false);
+      lastCheckedEmailRef.current = checkedEmail;
+
+      if (intent === 'submit') {
+        updateSubmitting(false);
+        if (registrationDataRef.current) {
+          onRegistrationDataReadyRef.current?.(registrationDataRef.current);
+          registrationDataRef.current = null;
+        }
+        onContinueToInformedConsent();
+        return;
+      }
+
+      if (rawError) {
+        setRawError(null);
+        onRawErrorChange?.(null);
+      }
+
+      if (error) {
+        updateError(null);
+      }
     },
-    onError: (err: Error) => {
-      updateSubmitting(false);
+    onError: (err, variables) => {
+      const { intent, email: checkedEmail } = variables;
+      const trimmedCurrentEmail = email.trim();
+
+      if (intent === 'blur' && checkedEmail !== trimmedCurrentEmail) {
+        return;
+      }
+
       handleEmailCheckError(err);
+
+      if (intent === 'submit') {
+        updateSubmitting(false);
+      }
     },
+  });
+
+  const checkCompanyCodeMutation = useMutation<boolean, Error | ApiError, CheckCompanyCodeVariables>({
+    mutationFn: async ({ code }) => checkCompanyCode(code),
   });
 
   useEffect(() => {
     setEmail(initialEmail);
+    setEmailHasError(false);
+    lastCheckedEmailRef.current = '';
   }, [initialEmail]);
 
   useEffect(() => {
     setInviteCode(initialInviteCode);
+    setInviteCodeHasError(false);
+    lastCheckedCompanyCodeRef.current = '';
+    lastCompanyCodeValidityRef.current = null;
   }, [initialInviteCode]);
 
   useEffect(() => {
     setPassword(initialPassword);
+    setPasswordHasError(false);
+    setPasswordStrength(computePasswordStrength(initialPassword));
   }, [initialPassword]);
 
   useEffect(() => {
     setConfirmPassword(initialConfirmPassword);
+    setConfirmPasswordHasError(false);
   }, [initialConfirmPassword]);
 
   useEffect(() => {
@@ -149,6 +256,8 @@ export default function Singup({
   }, [onSubmittingChange]);
 
   const handleEmailCheckError = useCallback((err: Error | ApiError) => {
+    lastCheckedEmailRef.current = '';
+
     if (err instanceof ApiError) {
       const translatedError = translateApiError(err.originalMessage);
       const normalizedMessage = err.originalMessage?.toLowerCase?.() ?? '';
@@ -170,35 +279,351 @@ export default function Singup({
     updateError(t('signupScreen.errors.registrationFailed'));
   }, [translateApiError, t, updateError]);
 
+  const handleInviteCodeCheckError = useCallback((err: Error | ApiError) => {
+    lastCheckedCompanyCodeRef.current = '';
+    lastCompanyCodeValidityRef.current = null;
+    setInviteCodeHasError(true);
+
+    if (err instanceof ApiError) {
+      const translatedError = translateApiError(err.originalMessage);
+      updateError(translatedError, err.originalMessage);
+      return;
+    }
+
+    if (err instanceof Error) {
+      const fallbackMessage = err.message || t('signupScreen.errors.registrationFailed');
+      updateError(fallbackMessage, fallbackMessage);
+      return;
+    }
+
+    updateError(t('signupScreen.errors.registrationFailed'));
+  }, [t, translateApiError, updateError]);
+
+  const validateEmailField = useCallback((value: string) => {
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) {
+      return t('signupScreen.errors.requiredFields');
+    }
+
+    if (!trimmedValue.includes('@')) {
+      return t('signupScreen.errors.emailMissingAt');
+    }
+
+    if (!EMAIL_REGEX.test(trimmedValue)) {
+      return t('signupScreen.errors.invalidFields');
+    }
+
+    return null;
+  }, [t]);
+
+  const validateInviteCodeField = useCallback((value: string) => {
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) {
+      return t('signupScreen.errors.requiredFields');
+    }
+
+    return null;
+  }, [t]);
+
+  const validatePasswordField = useCallback((value: string) => {
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) {
+      return t('signupScreen.errors.requiredFields');
+    }
+
+    if (trimmedValue.length < 8) {
+      return t('signupScreen.errors.passwordTooShort');
+    }
+
+    return null;
+  }, [t]);
+
+  const validateConfirmPasswordField = useCallback((value: string, referencePassword: string) => {
+    const trimmedValue = value.trim();
+    const trimmedPassword = referencePassword.trim();
+
+    if (!trimmedValue) {
+      return t('signupScreen.errors.requiredFields');
+    }
+
+    if (trimmedValue !== trimmedPassword) {
+      return t('signupScreen.errors.passwordMismatch');
+    }
+
+    return null;
+  }, [t]);
+
+
+  const clearGlobalErrorIfResolved = useCallback((overrides: FieldErrorOverrides = {}) => {
+    const nextEmailHasError = overrides.emailHasError ?? emailHasError;
+    const nextInviteCodeHasError = overrides.inviteCodeHasError ?? inviteCodeHasError;
+    const nextPasswordHasError = overrides.passwordHasError ?? passwordHasError;
+    const nextConfirmPasswordHasError = overrides.confirmPasswordHasError ?? confirmPasswordHasError;
+
+    if (!nextEmailHasError && !nextInviteCodeHasError && !nextPasswordHasError && !nextConfirmPasswordHasError) {
+      updateError(null);
+    }
+  }, [emailHasError, inviteCodeHasError, passwordHasError, confirmPasswordHasError, updateError]);
+
+  const verifyInviteCode = useCallback(async (codeValue: string, intent: CheckEmailIntent) => {
+    const trimmedCode = codeValue.trim();
+
+    if (!trimmedCode) {
+      return false;
+    }
+
+    if (trimmedCode === lastCheckedCompanyCodeRef.current && lastCompanyCodeValidityRef.current !== null) {
+      return lastCompanyCodeValidityRef.current;
+    }
+
+    try {
+      const isValid = await checkCompanyCodeMutation.mutateAsync({ code: trimmedCode, intent });
+
+      if (trimmedCode !== inviteCode.trim()) {
+        return isValid;
+      }
+
+      lastCheckedCompanyCodeRef.current = trimmedCode;
+      lastCompanyCodeValidityRef.current = isValid;
+
+      if (!isValid) {
+        setInviteCodeHasError(true);
+        const invalidMessage = translateApiError(INVALID_INVITE_CODE_RAW_MESSAGE);
+        updateError(invalidMessage, INVALID_INVITE_CODE_RAW_MESSAGE);
+      } else {
+        setInviteCodeHasError(false);
+        if (rawError === INVALID_INVITE_CODE_RAW_MESSAGE) {
+          updateError(null);
+        }
+        clearGlobalErrorIfResolved({ inviteCodeHasError: false });
+      }
+
+      return isValid;
+    } catch (err) {
+      const normalizedError = err instanceof ApiError || err instanceof Error ? err : new Error(String(err));
+
+      if (trimmedCode === inviteCode.trim()) {
+        handleInviteCodeCheckError(normalizedError);
+      }
+
+      return false;
+    }
+  }, [
+    checkCompanyCodeMutation,
+    clearGlobalErrorIfResolved,
+    handleInviteCodeCheckError,
+    inviteCode,
+    rawError,
+    translateApiError,
+    updateError,
+  ]);
   const handleEmailChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextEmail = event.target.value;
     setEmail(nextEmail);
     onEmailChange?.(nextEmail);
-    updateError(null);
-    setEmailHasError(false);
+    lastCheckedEmailRef.current = '';
 
-  }, [onEmailChange, updateError]);
+    if (!emailHasError) {
+      return;
+    }
+
+    const trimmedEmail = nextEmail.trim();
+    const validationMessage = validateEmailField(trimmedEmail);
+
+    if (validationMessage) {
+      updateError(validationMessage);
+      return;
+    }
+
+    setEmailHasError(false);
+    clearGlobalErrorIfResolved({ emailHasError: false });
+  }, [clearGlobalErrorIfResolved, emailHasError, onEmailChange, updateError, validateEmailField]);
 
   const handleInviteCodeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextInviteCode = event.target.value;
     setInviteCode(nextInviteCode);
     onInviteCodeChange?.(nextInviteCode);
-    updateError(null);
-  }, [onInviteCodeChange, updateError]);
+    lastCheckedCompanyCodeRef.current = '';
+    lastCompanyCodeValidityRef.current = null;
+
+    if (!inviteCodeHasError) {
+      return;
+    }
+
+    const validationMessage = validateInviteCodeField(nextInviteCode.trim());
+    if (validationMessage) {
+      updateError(validationMessage);
+      return;
+    }
+
+    setInviteCodeHasError(false);
+    clearGlobalErrorIfResolved({ inviteCodeHasError: false });
+  }, [clearGlobalErrorIfResolved, inviteCodeHasError, onInviteCodeChange, updateError, validateInviteCodeField]);
 
   const handlePasswordChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextPassword = event.target.value;
     setPassword(nextPassword);
+    setPasswordStrength(computePasswordStrength(nextPassword));
     onPasswordChange?.(nextPassword);
-    updateError(null);
-  }, [onPasswordChange, updateError]);
+
+    if (!passwordHasError && !confirmPasswordHasError) {
+      return;
+    }
+
+    const trimmedPassword = nextPassword.trim();
+    const passwordValidationMessage = validatePasswordField(trimmedPassword);
+
+    if (passwordValidationMessage) {
+      setPasswordHasError(true);
+      updateError(passwordValidationMessage);
+      return;
+    }
+
+    const trimmedConfirmPassword = confirmPassword.trim();
+    const confirmValidationMessage = confirmPasswordHasError
+      ? validateConfirmPasswordField(trimmedConfirmPassword, trimmedPassword)
+      : null;
+
+    if (confirmValidationMessage) {
+      setPasswordHasError(true);
+      setConfirmPasswordHasError(true);
+      updateError(confirmValidationMessage);
+      return;
+    }
+
+    if (passwordHasError) {
+      setPasswordHasError(false);
+    }
+
+    if (confirmPasswordHasError) {
+      setConfirmPasswordHasError(false);
+    }
+
+    clearGlobalErrorIfResolved({ passwordHasError: false, confirmPasswordHasError: false });
+  }, [clearGlobalErrorIfResolved, confirmPassword, confirmPasswordHasError, onPasswordChange, passwordHasError, updateError, validateConfirmPasswordField, validatePasswordField]);
 
   const handleConfirmPasswordChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextConfirmPassword = event.target.value;
     setConfirmPassword(nextConfirmPassword);
     onConfirmPasswordChange?.(nextConfirmPassword);
-    updateError(null);
-  }, [onConfirmPasswordChange, updateError]);
+
+    if (!confirmPasswordHasError && !passwordHasError) {
+      return;
+    }
+
+    const trimmedConfirmPassword = nextConfirmPassword.trim();
+    const trimmedPassword = password.trim();
+
+    const passwordValidationMessage = passwordHasError ? validatePasswordField(trimmedPassword) : null;
+    if (passwordValidationMessage) {
+      setPasswordHasError(true);
+      updateError(passwordValidationMessage);
+      return;
+    }
+
+    const confirmValidationMessage = validateConfirmPasswordField(trimmedConfirmPassword, trimmedPassword);
+
+    if (confirmValidationMessage) {
+      if (doPasswordsMismatch(trimmedPassword, trimmedConfirmPassword)) {
+        setPasswordHasError(true);
+      }
+      setConfirmPasswordHasError(true);
+      updateError(confirmValidationMessage);
+      return;
+    }
+
+    if (confirmPasswordHasError) {
+      setConfirmPasswordHasError(false);
+    }
+
+    if (passwordHasError) {
+      setPasswordHasError(false);
+    }
+
+    clearGlobalErrorIfResolved({ confirmPasswordHasError: false, passwordHasError: false });
+  }, [clearGlobalErrorIfResolved, confirmPasswordHasError, onConfirmPasswordChange, password, passwordHasError, updateError, validateConfirmPasswordField, validatePasswordField]);
+
+  const handleEmailBlur = useCallback(() => {
+    const trimmedEmail = email.trim();
+    const validationMessage = validateEmailField(trimmedEmail);
+
+    if (validationMessage) {
+      setEmailHasError(true);
+      updateError(validationMessage);
+      return;
+    }
+
+    setEmailHasError(false);
+    clearGlobalErrorIfResolved({ emailHasError: false });
+
+    if (!trimmedEmail) {
+      return;
+    }
+
+    if (trimmedEmail === lastCheckedEmailRef.current) {
+      return;
+    }
+
+    if (checkEmailMutation.isPending) {
+      return;
+    }
+
+    checkEmailMutation.mutate({ email: trimmedEmail, intent: 'blur' });
+  }, [checkEmailMutation, clearGlobalErrorIfResolved, email, updateError, validateEmailField]);
+
+  const handleInviteCodeBlur = useCallback(() => {
+    const trimmedInviteCodeValue = inviteCode.trim();
+    const validationMessage = validateInviteCodeField(trimmedInviteCodeValue);
+
+    if (validationMessage) {
+      setInviteCodeHasError(true);
+      updateError(validationMessage);
+      return;
+    }
+
+    void verifyInviteCode(trimmedInviteCodeValue, 'blur');
+  }, [inviteCode, updateError, validateInviteCodeField, verifyInviteCode]);
+
+  const handlePasswordBlur = useCallback(() => {
+    const validationMessage = validatePasswordField(password);
+
+    if (validationMessage) {
+      setPasswordHasError(true);
+      updateError(validationMessage);
+      return;
+    }
+
+    if (doPasswordsMismatch(password, confirmPassword)) {
+      setPasswordHasError(true);
+      return;
+    }
+
+    setPasswordHasError(false);
+    clearGlobalErrorIfResolved({ passwordHasError: false });
+  }, [clearGlobalErrorIfResolved, confirmPassword, password, updateError, validatePasswordField]);
+
+  const handleConfirmPasswordBlur = useCallback(() => {
+    const validationMessage = validateConfirmPasswordField(confirmPassword, password);
+
+    if (validationMessage) {
+      setConfirmPasswordHasError(true);
+      if (doPasswordsMismatch(password, confirmPassword)) {
+        setPasswordHasError(true);
+      }
+      updateError(validationMessage);
+      return;
+    }
+
+    setConfirmPasswordHasError(false);
+    const passwordValidationMessage = validatePasswordField(password);
+    if (!passwordValidationMessage) {
+      setPasswordHasError(false);
+      clearGlobalErrorIfResolved({ confirmPasswordHasError: false, passwordHasError: false });
+    }
+  }, [clearGlobalErrorIfResolved, confirmPassword, password, updateError, validateConfirmPasswordField, validatePasswordField]);
 
   const handleTermsLinkClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -224,6 +649,13 @@ export default function Singup({
     updateError(null);
   }, [onPrivacyAcceptedChange, updateError]);
 
+  const renderImportantLinkLabel = useCallback((labelText: string) => (
+    <>
+      {labelText}
+      <span aria-hidden="true" className="app-textfield-required-indicator">*</span>
+    </>
+  ), []);
+
   const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -243,31 +675,53 @@ export default function Singup({
     const trimmedInviteCode = inviteCode.trim();
     const trimmedPassword = password.trim();
     const trimmedConfirmPassword = confirmPassword.trim();
+    setPasswordStrength(computePasswordStrength(trimmedPassword));
 
-    const hasEmptyFields = !trimmedEmail || !trimmedInviteCode || !trimmedPassword || !trimmedConfirmPassword;
-
-    if (hasEmptyFields) {
-      updateError(null);
+    const emailValidationMessage = validateEmailField(trimmedEmail);
+    if (emailValidationMessage) {
+      setEmailHasError(true);
+      updateError(emailValidationMessage);
       return;
     }
+    setEmailHasError(false);
+
+    const inviteCodeValidationMessage = validateInviteCodeField(trimmedInviteCode);
+    if (inviteCodeValidationMessage) {
+      setInviteCodeHasError(true);
+      updateError(inviteCodeValidationMessage);
+      return;
+    }
+
+    const isInviteCodeValid = await verifyInviteCode(trimmedInviteCode, 'submit');
+    if (!isInviteCodeValid) {
+      return;
+    }
+
+    const passwordValidationMessage = validatePasswordField(trimmedPassword);
+    if (passwordValidationMessage) {
+      setPasswordHasError(true);
+      updateError(passwordValidationMessage);
+      return;
+    }
+    setPasswordHasError(false);
+
+    const confirmPasswordValidationMessage = validateConfirmPasswordField(trimmedConfirmPassword, trimmedPassword);
+    if (confirmPasswordValidationMessage) {
+      setConfirmPasswordHasError(true);
+      if (doPasswordsMismatch(trimmedPassword, trimmedConfirmPassword)) {
+        setPasswordHasError(true);
+      }
+      updateError(confirmPasswordValidationMessage);
+      return;
+    }
+    setConfirmPasswordHasError(false);
 
     if (!termsAccepted || !privacyAccepted) {
       updateError(t('signupScreen.errors.requiredFields'));
       return;
     }
 
-    if (trimmedPassword.length < 8) {
-      updateError(t('signupScreen.errors.passwordTooShort'));
-      return;
-    }
-
-    if (trimmedPassword !== trimmedConfirmPassword) {
-      updateError(t('signupScreen.errors.passwordMismatch'));
-      return;
-    }
-
     updateError(null);
-    setEmailHasError(false);
     updateSubmitting(true);
 
     registrationDataRef.current = {
@@ -276,34 +730,53 @@ export default function Singup({
       password: trimmedPassword,
     };
 
-    checkEmailMutation.mutate(trimmedEmail);
-  }, [checkEmailMutation, confirmPassword, email, inviteCode, isSubmitting, password, privacyAccepted, t, termsAccepted, updateError, updateSubmitting]);
+    checkEmailMutation.mutate({ email: trimmedEmail, intent: 'submit' });
+  }, [
+    checkEmailMutation,
+    confirmPassword,
+    email,
+    inviteCode,
+    isSubmitting,
+    password,
+    privacyAccepted,
+    t,
+    termsAccepted,
+    updateError,
+    updateSubmitting,
+    validateConfirmPasswordField,
+    validateEmailField,
+    validateInviteCodeField,
+    validatePasswordField,
+    verifyInviteCode,
+  ]);
 
   const termsAgreementLabel = useMemo(() => (
     <>
       {t('signupScreen.agreements.terms.prefix')}
       <Link
         to={t('signupScreen.agreements.terms.href')}
-        label={t('signupScreen.agreements.terms.link')}
-        variant="subtle"
+        label={renderImportantLinkLabel(t('signupScreen.agreements.terms.link'))}
+        variant="important"
         onClick={handleTermsLinkClick}
       />
       {t('signupScreen.agreements.terms.suffix')}
     </>
-  ), [handleTermsLinkClick, t]);
+  ), [handleTermsLinkClick, renderImportantLinkLabel, t]);
 
   const privacyAgreementLabel = useMemo(() => (
     <>
       {t('signupScreen.agreements.privacy.prefix')}
       <Link
         to={t('signupScreen.agreements.privacy.href')}
-        label={t('signupScreen.agreements.privacy.link')}
-        variant="subtle"
+        label={renderImportantLinkLabel(t('signupScreen.agreements.privacy.link'))}
+        variant="important"
         onClick={handlePrivacyLinkClick}
       />
       {t('signupScreen.agreements.privacy.suffix')}
     </>
-  ), [handlePrivacyLinkClick, t]);
+  ), [handlePrivacyLinkClick, renderImportantLinkLabel, t]);
+
+  const agreementsTooltipMessage = t('signupScreen.agreements.tooltip');
 
   return (
     <div className="singup-container">
@@ -323,6 +796,7 @@ export default function Singup({
             autoComplete="email"
             value={email}
             onChange={handleEmailChange}
+            onBlur={handleEmailBlur}
             disabled={isSubmitting}
             error={emailHasError}
             required
@@ -334,21 +808,39 @@ export default function Singup({
             name="signup-invite-code"
             value={inviteCode}
             onChange={handleInviteCodeChange}
+            onBlur={handleInviteCodeBlur}
             disabled={isSubmitting}
+            error={inviteCodeHasError}
             required
+            labelIcon={(
+              <Tooltip content={t('signupScreen.invitationCode.tooltip')}>
+                <button
+                  type="button"
+                  className="app-textfield-label-icon-button"
+                  aria-label={t('signupScreen.invitationCode.tooltip')}
+                >
+                  <QuestionIcon size={16} aria-hidden={true} />
+                </button>
+              </Tooltip>
+            )}
           />
-          <Textfield
-            label={t('password.label')}
-            placeholder={t('signupScreen.password.placeholder')}
-            type="password"
-            id="signup-password"
-            name="signup-password"
-            autoComplete="new-password"
-            value={password}
-            onChange={handlePasswordChange}
-            disabled={isSubmitting}
-            required
-          />
+          <div className="singup-password-field">
+            <Textfield
+              label={t('password.label')}
+              placeholder={t('signupScreen.password.placeholder')}
+              type="password"
+              id="signup-password"
+              name="signup-password"
+              autoComplete="new-password"
+              value={password}
+              onChange={handlePasswordChange}
+              onBlur={handlePasswordBlur}
+              disabled={isSubmitting}
+              error={passwordHasError}
+              required
+            />
+            <PasswordStrength strength={passwordStrength} password={password} />
+          </div>
           <Textfield
             label={t('signupScreen.confirmPassword.label')}
             placeholder={t('signupScreen.confirmPassword.placeholder')}
@@ -358,7 +850,9 @@ export default function Singup({
             autoComplete="new-password"
             value={confirmPassword}
             onChange={handleConfirmPasswordChange}
+            onBlur={handleConfirmPasswordBlur}
             disabled={isSubmitting}
+            error={confirmPasswordHasError}
             required
           />
         </div>
@@ -370,20 +864,24 @@ export default function Singup({
         message={t('signupScreen.importantNotice.message')}
       />
       <div className="auth-agreements">
-        <Checkbox
-          wrapperClassName="auth-agreement"
-          label={termsAgreementLabel}
-          disabled
-          checked={termsAccepted}
-          onCheckedChange={handleTermsCheckedChange}
-        />
-        <Checkbox
-          wrapperClassName="auth-agreement"
-          label={privacyAgreementLabel}
-          disabled
-          checked={privacyAccepted}
-          onCheckedChange={handlePrivacyCheckedChange}
-        />
+        <Tooltip content={agreementsTooltipMessage} delayDuration={0}>
+          <Checkbox
+            wrapperClassName="auth-agreement"
+            label={termsAgreementLabel}
+            disabled
+            checked={termsAccepted}
+            onCheckedChange={handleTermsCheckedChange}
+          />
+        </Tooltip>
+        <Tooltip content={agreementsTooltipMessage} delayDuration={0}>
+          <Checkbox
+            wrapperClassName="auth-agreement"
+            label={privacyAgreementLabel}
+            disabled
+            checked={privacyAccepted}
+            onCheckedChange={handlePrivacyCheckedChange}
+          />
+        </Tooltip>
       </div>
     </div>
   );

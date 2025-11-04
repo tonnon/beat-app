@@ -59,6 +59,23 @@ export const WithError: Story = {
   },
 };
 
+export const PasswordField: Story = {
+  args: {
+    id: 'account-password',
+    label: 'Password',
+    placeholder: 'Create a password',
+    type: 'password',
+    autoComplete: 'new-password',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shows the built-in password visibility toggle and accessibility attributes.',
+      },
+    },
+  },
+};
+
 export const Controlled: Story = {
   render: (args) => {
     const [value, setValue] = useState('Sophia Johnson');

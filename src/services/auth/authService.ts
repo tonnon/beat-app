@@ -77,6 +77,36 @@ const mapToApiError = (error: unknown): ApiError => {
   return new ApiError(String(error), String(error));
 };
 
+const BOOLEAN_FALSE_PATTERNS: ReadonlyArray<RegExp> = [
+  /^(false|no|0)$/i,
+  /does\s+not\s+exist/i,
+  /no\s+existe/i,
+  /no\s+existeix/i,
+  /not\s+found/i,
+  /not\s+valid/i,
+  /no\s+válido/i,
+  /no\s+vàlid/i,
+  /invalid/i,
+  /inexistent/i,
+  /inexistente/i,
+];
+
+const BOOLEAN_TRUE_PATTERNS: ReadonlyArray<RegExp> = [
+  /^(true|yes|1)$/i,
+  /already\s+exist/i,
+  /ya\s+existe/i,
+  /ja\s+existeix/i,
+  /is\s+valid/i,
+  /es\s+válido/i,
+  /és\s+vàlid/i,
+  /code\s+valid/i,
+  /válido\s+el\s+código/i,
+  /codi\s+vàlid/i,
+];
+
+const EMAIL_BOOLEAN_KEYS = ['exists', 'emailExists', 'isRegistered', 'emailAlreadyExists'] as const;
+const COMPANY_BOOLEAN_KEYS = ['valid', 'isValid', 'exists', 'codeValid', 'companyExists'] as const;
+
 export interface RegisterUserPayload {
   email: string;
   codeCompany: string;
@@ -84,6 +114,23 @@ export interface RegisterUserPayload {
   fullName: string;
   dni: string;
   birthDate?: string | null;
+}
+
+export async function checkCompanyCode(code: string, signal?: AbortSignal): Promise<boolean> {
+  const url = `${resolveApiUrl(API_PATHS.checkCompanyCode)}?code=${encodeURIComponent(code)}&_=${Date.now()}`;
+
+  try {
+    const response = await fetch(url, { cache: 'no-store', signal });
+
+    if (response.status === 404) {
+      return false;
+    }
+
+    const successfulResponse = await ensureSuccessfulResponse(response);
+    return parseCheckCompanyCodeResult(successfulResponse);
+  } catch (error) {
+    throw mapToApiError(error);
+  }
 }
 
 export async function checkEmail(email: string, signal?: AbortSignal): Promise<void> {
@@ -103,59 +150,122 @@ export async function checkEmail(email: string, signal?: AbortSignal): Promise<v
 }
 
 async function parseCheckEmailResult(response: Response): Promise<boolean> {
+  return parseBooleanResponse(response, EMAIL_BOOLEAN_KEYS);
+}
+
+async function parseCheckCompanyCodeResult(response: Response): Promise<boolean> {
+  return parseBooleanResponse(response, COMPANY_BOOLEAN_KEYS);
+}
+
+async function parseBooleanResponse(response: Response, keys: readonly string[]): Promise<boolean> {
+  const extract = (candidate: unknown) => extractBooleanFromCandidate(candidate, keys);
+
   try {
-    const parsed = await response.clone().json();
+    const jsonPayload = await response.clone().json();
+    const jsonResult = extract(jsonPayload);
 
-    if (typeof parsed === 'boolean') {
-      return parsed;
-    }
-
-    if (typeof parsed === 'string') {
-      return normalizeBooleanString(parsed);
-    }
-
-    if (parsed && typeof parsed === 'object') {
-      const candidate = parsed as Record<string, unknown>;
-
-      for (const key of ['exists', 'emailExists', 'isRegistered', 'emailAlreadyExists']) {
-        const value = candidate[key];
-
-        if (typeof value === 'boolean') {
-          return value;
-        }
-
-        if (typeof value === 'string' && normalizeBooleanString(value)) {
-          return true;
-        }
-      }
+    if (jsonResult !== null) {
+      return jsonResult;
     }
   } catch {
+    
+  }
+
+  try {
     const textPayload = (await response.clone().text()).trim();
 
     if (textPayload) {
-      return normalizeBooleanString(textPayload);
+      const textResult = normalizeBooleanString(textPayload);
+
+      if (textResult !== null) {
+        return textResult;
+      }
     }
+  } catch {
+    
   }
 
   return false;
 }
 
-function normalizeBooleanString(value: string): boolean {
+function extractBooleanFromCandidate(
+  candidate: unknown,
+  keys: readonly string[],
+  visited: WeakSet<object> = new WeakSet(),
+): boolean | null {
+  const worklist: unknown[] = [candidate];
+
+  while (worklist.length > 0) {
+    const current = worklist.pop();
+
+    if (current == null) {
+      continue;
+    }
+
+    const currentType = typeof current;
+
+    if (currentType === 'boolean') {
+      return current as boolean;
+    }
+
+    if (currentType === 'string') {
+      const parsed = normalizeBooleanString(current as string);
+
+      if (parsed !== null) {
+        return parsed;
+      }
+
+      continue;
+    }
+
+    if (currentType !== 'object') {
+      continue;
+    }
+
+    const objectCandidate = current as object;
+
+    if (visited.has(objectCandidate)) {
+      continue;
+    }
+
+    visited.add(objectCandidate);
+
+    const record = current as Record<string, unknown>;
+
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(record, key)) {
+        worklist.push(record[key]);
+      }
+    }
+
+    for (const value of Object.values(record)) {
+      worklist.push(value);
+    }
+  }
+
+  return null;
+}
+
+function normalizeBooleanString(value: string): boolean | null {
   const normalized = value.trim().toLowerCase();
 
   if (!normalized) {
-    return false;
+    return null;
   }
 
-  if (normalized === 'true' || normalized === 'yes') {
-    return true;
+  for (const pattern of BOOLEAN_FALSE_PATTERNS) {
+    if (pattern.test(normalized)) {
+      return false;
+    }
   }
 
-  if (normalized === 'false' || normalized === 'no') {
-    return false;
+  for (const pattern of BOOLEAN_TRUE_PATTERNS) {
+    if (pattern.test(normalized)) {
+      return true;
+    }
   }
 
-  return normalized.includes('already') || normalized.includes('registr') || normalized.includes('exist');
+  return null;
 }
 
 export interface PasswordResetRequestPayload {

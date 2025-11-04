@@ -29,7 +29,51 @@ $textfield-day-border-radius: 3px;
 .app-textfield-label-content {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.35rem;
+  width: 100%;
+}
+
+.app-textfield-label-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1 1 auto;
+}
+
+.app-textfield-label-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: rgba($color-text, 0.75);
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.app-textfield-label-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    border-radius: 999px;
+  }
+
+  &:hover {
+    color: $color-primary;
+  }
 }
 
 .app-textfield-label-wrapper {
@@ -99,6 +143,56 @@ $textfield-day-border-radius: 3px;
     border-color: $color-error;
     box-shadow: none;
   }
+}
+
+.app-textfield-password-toggle {
+  position: relative;
+  width: 100%;
+}
+
+.app-textfield-password-toggle .app-textfield-input {
+  padding-right: 2.5rem;
+}
+
+.app-textfield-password-toggle-button {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: rgba($color-text, 0.55);
+  transition: color $transition-duration ease;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    border-radius: 50%;
+  }
+
+  &:hover {
+    color: $color-primary;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    color: rgba($color-text, 0.35);
+  }
+}
+
+.app-textfield-password-toggle-icon {
+  font-size: 1.125rem;
+  line-height: 1;
 }
 
 .app-textfield--date-picker {

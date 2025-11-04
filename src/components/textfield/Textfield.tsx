@@ -15,6 +15,8 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { caES, esES } from '@mui/x-date-pickers/locales';
+import * as PasswordToggleField from '@radix-ui/react-password-toggle-field';
+import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons';
 import { useTranslation } from 'react-i18next';
 
 import './textfield.scss';
@@ -29,6 +31,7 @@ type SharedProps = {
 	readonly error?: boolean;
 	readonly labelSuffix?: ReactNode;
 	readonly className?: string;
+	readonly labelIcon?: ReactNode;
 };
 
 type DefaultTextfieldProps = SharedProps &
@@ -85,12 +88,14 @@ function DefaultTextfield({
 	className,
 	error = false,
 	labelSuffix,
+	labelIcon,
 	variant: _variant,
 	onInvalid: inputOnInvalid,
 	onInput: inputOnInput,
 	forwardedRef,
 	...inputProps
 }: DefaultTextfieldProps & { readonly forwardedRef: ForwardedRef<HTMLInputElement> }) {
+	const { t } = useTranslation<'common'>('common');
 	const [isInvalid, setIsInvalid] = useState(false);
 	const { innerRef, handleRef } = useForwardedRef(forwardedRef);
 	const fieldClass = `app-textfield${wrapperClassName ? ` ${wrapperClassName}` : ''}`;
@@ -103,7 +108,18 @@ function DefaultTextfield({
 	}
 	const inputClass = inputClasses.join(' ');
 	const descriptionId = description ? `${id}-description` : undefined;
-	const isRequired = Boolean(inputProps.required);
+	const {
+		type: inputType = 'text',
+		required,
+		disabled,
+		autoComplete,
+		...restInputProps
+	} = inputProps;
+	const isPasswordField = inputType === 'password';
+	const isRequired = Boolean(required);
+	const passwordAutoComplete = isPasswordField && (autoComplete === 'current-password' || autoComplete === 'new-password')
+		? (autoComplete as 'current-password' | 'new-password')
+		: undefined;
 
 	const handleInvalid = useCallback<FormEventHandler<HTMLInputElement>>(
 		(event) => {
@@ -148,36 +164,84 @@ function DefaultTextfield({
 		return () => {
 			form.removeEventListener('submit', handleFormSubmit, true);
 		};
-	}, [innerRef, inputProps.required]);
+	}, [innerRef, required]);
+
+	const passwordToggleAriaLabel = t('passwordToggle.ariaLabel');
+
+	const inputElement = isPasswordField ? (
+		<div className="app-textfield-password-toggle">
+			<PasswordToggleField.Root>
+				<PasswordToggleField.Input
+					id={id}
+					ref={handleRef}
+					className={inputClass}
+					aria-describedby={descriptionId}
+					onInvalid={handleInvalid}
+					onInput={handleInput}
+					aria-invalid={error || isInvalid || undefined}
+					required={required}
+					disabled={disabled}
+					autoComplete={passwordAutoComplete}
+					{...restInputProps}
+				/>
+				<PasswordToggleField.Toggle
+					id={`${id}-toggle`}
+					className="app-textfield-password-toggle-button"
+					disabled={disabled}
+					aria-label={passwordToggleAriaLabel}
+					aria-controls={id}
+				>
+					<PasswordToggleField.Icon
+						className="app-textfield-password-toggle-icon"
+						visible={<EyeOpenIcon aria-hidden="true" />}
+						hidden={<EyeClosedIcon aria-hidden="true" />}
+					/>
+				</PasswordToggleField.Toggle>
+			</PasswordToggleField.Root>
+		</div>
+	) : (
+		<input
+			id={id}
+			ref={handleRef}
+			className={inputClass}
+			aria-describedby={descriptionId}
+			onInvalid={handleInvalid}
+			onInput={handleInput}
+			aria-invalid={error || isInvalid || undefined}
+			type={inputType}
+			required={required}
+			disabled={disabled}
+			autoComplete={autoComplete}
+			{...restInputProps}
+		/>
+	);
 
 	return (
 		<div className={fieldClass}>
 			<div className="app-textfield-label-wrapper">
 				<label className="app-textfield-label" htmlFor={id}>
-					<span className="app-textfield-label-content">
-						{label}
-						{isRequired ? (
-							<span aria-hidden="true" className="app-textfield-required-indicator">
-								*
+						<span className="app-textfield-label-content">
+							<span className="app-textfield-label-text">
+								{label}
+								{isRequired ? (
+									<span aria-hidden="true" className="app-textfield-required-indicator">
+										*
+									</span>
+								) : null}
 							</span>
-						) : null}
-					</span>
+							{labelIcon ? (
+								<span className="app-textfield-label-icon">
+									{labelIcon}
+								</span>
+							) : null}
+						</span>
 				</label>
 				{labelSuffix ? (
 					<span className="app-textfield-label-suffix">{labelSuffix}</span>
 				) : null}
 			</div>
 
-			<input
-				id={id}
-				ref={handleRef}
-				className={inputClass}
-				aria-describedby={descriptionId}
-				onInvalid={handleInvalid}
-				onInput={handleInput}
-				aria-invalid={error || isInvalid || undefined}
-				{...inputProps}
-			/>
+			{inputElement}
 
 			{description ? (
 				<p id={descriptionId} className="app-textfield-description">
@@ -196,6 +260,7 @@ function DatePickerTextfield({
 	className,
 	error = false,
 	labelSuffix,
+	labelIcon,
 	variant: _variant,
 	value,
 	defaultValue,
@@ -361,10 +426,17 @@ function DatePickerTextfield({
 			<div className="app-textfield-label-wrapper">
 				<label className="app-textfield-label" htmlFor={id}>
 					<span className="app-textfield-label-content">
-						{label}
-						{isRequired ? (
-							<span aria-hidden="true" className="app-textfield-required-indicator">
-								*
+						<span className="app-textfield-label-text">
+							{label}
+							{isRequired ? (
+								<span aria-hidden="true" className="app-textfield-required-indicator">
+									*
+								</span>
+							) : null}
+						</span>
+						{labelIcon ? (
+							<span className="app-textfield-label-icon">
+								{labelIcon}
 							</span>
 						) : null}
 					</span>

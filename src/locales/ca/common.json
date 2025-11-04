@@ -20,5 +20,8 @@
     "subtitle": "La teva sessió ha expirat. Per continuar, torna a iniciar sessió des de la pàgina principal.",
     "message": "Seràs redirigit a l'inici perquè puguis iniciar sessió novament.",
     "action": "Anar a l'inici"
+  },
+  "passwordToggle": {
+    "ariaLabel": "Mostrar o ocultar la contrasenya"
   }
 }

@@ -4,6 +4,7 @@ export {
   FaUserAlt as UserIcon,
   FaRegStar as StarIcon,
   FaPen as PenIcon,
+  FaQuestionCircle as QuestionIcon,
 } from 'react-icons/fa';
 
 export {

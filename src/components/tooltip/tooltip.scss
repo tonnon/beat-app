@@ -1,0 +1,22 @@
+.app-tooltip-trigger {
+	display: inline-flex;
+	align-items: center;
+}
+
+.app-tooltip-content {
+	background-color: rgba($color-neutral-900, 0.95);
+	color: $color-surface;
+	font-size: 0.75rem;
+	line-height: 1.2;
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+	max-width: 220px;
+	text-align: center;
+	z-index: 1200;
+	pointer-events: none;
+}
+
+.app-tooltip-arrow {
+	fill: rgba($color-neutral-900, 0.95);
+}

@@ -55,7 +55,8 @@ $top-navbar-gradient-end: $color-primary-alt;
     }
   }
 
-  &--subtle {
+  &--subtle,
+  &--important {
     font-size: 0.875rem;
     font-weight: 400;
     padding: 0;
@@ -78,5 +79,9 @@ $top-navbar-gradient-end: $color-primary-alt;
         background: $color-primary-hover;
       }
     }
+  }
+
+  &--important {
+    display: inline;
   }
 }

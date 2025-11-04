@@ -56,6 +56,9 @@ export default function Auth() {
   const [signupPrivacyAccepted, setSignupPrivacyAccepted] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [registrationPayload, setRegistrationPayload] = useState<Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'> | null>(null);
+  const [consentFullName, setConsentFullName] = useState('');
+  const [consentDni, setConsentDni] = useState('');
+  const [consentBirthDate, setConsentBirthDate] = useState<Date | null>(null);
   const dialogBodyRef = useRef<HTMLDivElement | null>(null);
   const documentCompletionRef = useRef({
     terms: false,
@@ -86,6 +89,9 @@ export default function Auth() {
     };
     clearSignupErrors();
     setRegistrationPayload(null);
+    setConsentFullName('');
+    setConsentDni('');
+    setConsentBirthDate(null);
   }, [clearSignupErrors]);
 
   const clearConfirmEmailError = useCallback(() => {
@@ -373,7 +379,7 @@ export default function Auth() {
       documentCompletionRef.current.privacy = true;
       setSignupPrivacyAccepted(true);
     }
-  }, [isOpen, view, termsDocumentCompleted, privacyDocumentCompleted]);
+  }, [isOpen, view, termsDocumentCompleted, privacyDocumentCompleted, resetScrollProgress]);
 
   const dialogActions = useMemo<ReactNode>(() => {
     const backIcon = <ArrowLeftIcon size={ICON_SIZE} />;
@@ -482,6 +488,12 @@ export default function Auth() {
             onUserRegistered={handleUserRegistered}
             readingCompleted={readingCompleted}
             animateBackButton
+            fullName={consentFullName}
+            dni={consentDni}
+            birthDate={consentBirthDate}
+            onFullNameChange={(value) => setConsentFullName(value)}
+            onDniChange={(value) => setConsentDni(value)}
+            onBirthDateChange={(value) => setConsentBirthDate(value)}
           />
         );
 
@@ -577,6 +589,10 @@ export default function Auth() {
     loginSubmitting,
     renderActionsWrapper,
     privacyDocumentCompleted,
+    consentBirthDate,
+    consentDni,
+    consentFullName,
+    readingCompleted,
     signupPrivacyAccepted,
     signupSubmitting,
     signupTermsAccepted,
