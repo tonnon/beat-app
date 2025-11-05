@@ -27,18 +27,21 @@ $auth-mobile-container-gap: 1.25rem;
   flex-direction: column;
   gap: $auth-container-gap;
   width: 100%;
+  align-items: stretch;
 }
 
 .auth-fields {
   display: flex;
   flex-direction: column;
   gap: $auth-fields-gap;
+  width: 100%;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
   gap: $auth-form-gap;
+  width: 100%;
 }
 
 .auth-agreements {
@@ -47,6 +50,7 @@ $auth-mobile-container-gap: 1.25rem;
   gap: $auth-agreements-gap;
   margin-top: $auth-agreements-margin-top;
   padding-bottom: $auth-agreements-padding-bottom;
+  width: 100%;
 }
 
 .auth-field {

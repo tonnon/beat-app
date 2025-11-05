@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/protected-route/ProtectedRoute';
 import PublicRoute from '@/components/public-route/PublicRoute';
 import HomePage from '@/pages/home/HomePage';
-import UserEmployeeLayout from '@/pages/user-employee/UserEmployeeLayout';
 import UserEmployeePage from '@/pages/user-employee/UserEmployeePage';
 import DailyPage from '@/pages/user-employee/daily/DailyPage';
 import EducationPage from '@/pages/user-employee/education/EducationPage';
@@ -10,6 +9,8 @@ import PraticePage from '@/pages/user-employee/pratice/PraticePage';
 import CalendarPage from '@/pages/user-employee/calendar/CalendarPage';
 import AdminPage from '@/pages/user-admin/UserAdminPage';
 import ManagerPage from '@/pages/user-manager/UserManagerPage';
+import BottomNavLayout from '@/layout/user-layout/BottomNavLayout';
+import { DEFAULT_BOTTOM_NAVBAR_ITEMS } from '@/components/navbar/bottom-navbar/defaultItems';
 
 export default function AppRoutes() {
   return (
@@ -25,7 +26,7 @@ export default function AppRoutes() {
       <Route 
         element={
           <ProtectedRoute>
-            <UserEmployeeLayout />
+            <BottomNavLayout items={DEFAULT_BOTTOM_NAVBAR_ITEMS} />
           </ProtectedRoute>
         }
       >

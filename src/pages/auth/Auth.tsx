@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } fro
 import { useMutation } from '@tanstack/react-query';
 import Dialog from '@/components/dialog/Dialog';
 import ProgressLinear from '@/components/progress/progress-linear/ProgressLinear';
-import { useAuthDialog } from '@/context/auth/AuthDialogContext';
+import { useAuthDialog } from '@/context/auth/useAuthDialog';
 import Button from '@/components/button/Button';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,7 @@ import InformedConsentText from './informed-consent/informed-consent-text/Inform
 import SingupSuccess from './singup-success/SingupSuccess';
 import { confirmEmail, type ConfirmEmailPayload, ApiError } from '@/services/auth/authService';
 import type { RegisterUserPayload } from '@/services/auth/authService';
-import { useConsentProgress } from './hooks/useConsentProgress';
+import { useConsentProgress } from '@/hooks/useConsentProgress';
 import { type AuthView } from './constants';
 import './auth.scss';
 
@@ -592,6 +592,7 @@ export default function Auth() {
     consentBirthDate,
     consentDni,
     consentFullName,
+  consentTextCompleted,
     readingCompleted,
     signupPrivacyAccepted,
     signupSubmitting,

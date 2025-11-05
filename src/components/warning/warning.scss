@@ -4,6 +4,10 @@
   gap: 0.75rem;
   padding: 0.875rem 1rem;
   border-radius: 3px;
+  border: 1px solid transparent;
+  width: 100%;
+  box-sizing: border-box;
+  align-self: stretch;
   animation: warning-slide-in 0.3s ease-out;
 }
 
@@ -53,12 +57,16 @@
   flex: 1;
   font-size: 0.875rem;
   font-weight: 500;
+  line-height: 1.45;
   margin: 0;
 }
 
 .warning-error {
   background-color: rgba($color-error, 0.08);
-  border: 1px solid rgba($color-error, 0.3);
+  border-color: rgba($color-error, 0.3);
+  border-left-width: 4px;
+  border-left-color: $color-error;
+  box-shadow: 0 10px 18px rgba($color-error, 0.08);
 
   .warning-icon {
     color: $color-error;
@@ -72,6 +80,8 @@
 .warning-success {
   background-color: $color-success-bg;
   border: 1px solid $color-success-border;
+  border-left-width: 4px;
+  border-left-color: $color-success;
 
   .warning-icon {
     color: $color-success;

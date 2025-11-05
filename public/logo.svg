@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 74.61 52.65">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: .6em;
+      }
+
+      .cls-1, .cls-2 {
+        fill: #232323;
+        font-family: NewOrder-Semibold, 'New Order';
+        font-size: 6.8px;
+        font-weight: 600;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        isolation: isolate;
+      }
+
+      .cls-2 {
+        letter-spacing: .4em;
+      }
+
+      .cls-4 {
+        fill: #0a9fa4;
+        stroke: #0a9fa4;
+        stroke-width: .5px;
+      }
+
+      .cls-4, .cls-5, .cls-6, .cls-7 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-5 {
+        stroke: url(#Degradado_sin_nombre_2);
+      }
+
+      .cls-5, .cls-6, .cls-7 {
+        fill: none;
+        stroke-width: .2px;
+      }
+
+      .cls-6 {
+        stroke: url(#Degradado_sin_nombre_3);
+      }
+
+      .cls-7 {
+        stroke: url(#Degradado_sin_nombre_4);
+      }
+    </style>
+    <linearGradient id="Degradado_sin_nombre_2" data-name="Degradado sin nombre 2" x1="2.74" y1="28.43" x2="73.7" y2="28.43" gradientTransform="translate(0 54.86) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd53d"/>
+      <stop offset="1" stop-color="#aa3b17"/>
+    </linearGradient>
+    <linearGradient id="Degradado_sin_nombre_3" data-name="Degradado sin nombre 3" x1="2.75" y1="30.41" x2="50.12" y2="30.41" gradientTransform="translate(0 54.86) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd53d"/>
+      <stop offset="1" stop-color="#aa3b17"/>
+    </linearGradient>
+    <linearGradient id="Degradado_sin_nombre_4" data-name="Degradado sin nombre 4" x1=".1" y1="32.37" x2="74.59" y2="32.37" gradientTransform="translate(0 54.86) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd53d"/>
+      <stop offset="1" stop-color="#aa3b17"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <path class="cls-5" d="M15.7,37.39c-6.3-10.6-.25-17.54.75-20.64.9-2.7,1.45-3.66-2.55-6.76C9.7,6.69.36,4.97,1.16,2.58c.66-1.27,7.34.61,8.64.81,12.38,2.85,17.07,11.04,22.3,18.8,2.09,4.62,24.8,32.4,1.4,21.8-6.4-2.9-11.6,3.9-17.8-6.7v.1ZM16.7,24.89c.6,3.2,1.3,10.9,26.5,24.7,19.2,10.4,45.9-8.6,18.8-25.4C31.7,5.39,18.34,1.78,6.9.49-2.45-.57-.7,2.89,4.2,4.99c4.9,2.1,11.9,5,13.4,9.2.7,2-.9,4.9-1.1,7,0,1.2,0,2.3.2,3.6h0v.1Z"/>
+    <path class="cls-6" d="M31.61,35.89c-2.21-3.19-3.53-5.24-4.66-7.25-2.2-3.9-6.6-12.4-11.9-16.7C9.45,7.44,1.85,6.14,2.95,3.24,4.25-.06,13.49.5,19.75,5.04c7.68,5.58,15.4,14.03,19.86,20.57,2.11,3.1,5.02,7,6.62,10.7,2,4.8,7.22,15.33-3.18,10.13-2.2-1.1-3.42-1.88-5.62-3.68-1.82-1.4-3.2-3.09-5.82-6.87ZM25.82,25.8c2.27,3.67,3.1,4.97,5.3,8.17,5.54,7.88,22.78,20.25,18.28,8.05-1.3-3.5-3.18-6.95-4.65-10.49-2.25-5.42-4.01-8.59-10.2-16.64C25.76,3.45,10.65-.51,4.85,1.59c-1.8.7-3.1,2.1,1.7,4.8,5.71,3.25,8.82,4.9,11.35,7.41,1.42,1.41,2.56,3.21,4.85,6.79,1.33,2.09,2.36,3.9,3.06,5.22Z"/>
+    <path class="cls-7" d="M43,30.49c-5.1,4-20.07,1.67-23.24-4.87-1.86-3.85.44-12.63-6.26-14.73C5.1,8.29.3,7.79.1,4.29-.2-2.11,27.03-1.74,42.43,9.36c5.7,4.1,9.07,6.83,15.77,9.63,6.1,2.5,18.02,7.26,16.1,14.3s-15.9-3.3-18.5-4.3c-2.43-.93-5.04-1.64-8.1-.9-2.13.51-3.71,1.59-4.7,2.4ZM38.2,39.49c7.4,5.6,16.7,5.8,21.7,5.1,11.3-1.6,14.7-10.3,8.8-15.3-3.1-2.6-9.3-7.4-13.5-10.7-6.5-5.3-8.8-9.3-24.6-14.3C15.6-.51,1.8-.61.3,3.59c-.8,2.2,2.2,3.2,8.1,4.1,9.3,1.4-3.6,14.9-2,22.9,2.8,13.8,24.4,3.3,31.8,8.9Z"/>
+  </g>
+  <g>
+    <g class="cls-3">
+      <text class="cls-1" transform="translate(41.3 23.29) scale(1.1 1)"><tspan x="0" y="0">app</tspan></text>
+    </g>
+    <g class="cls-3">
+      <text class="cls-2" transform="translate(41.3 15.09)"><tspan x="0" y="0">beat</tspan></text>
+    </g>
+  </g>
+  <path class="cls-4" d="M28.8,10.49c-2.6,0-4.9,1-6.6,2.7V4.69h-2.7v16.3c.5,4.6,4.4,8.3,9.2,8.3,4.34,0,9.25-3.81,9.3-9.3.05-5.06-4.06-9.35-9.2-9.5ZM28.8,26.69c-3.8,0-6.9-3.1-6.9-6.9s3.1-6.9,6.9-6.9,6.9,3.1,6.9,6.9-3.1,6.9-6.9,6.9Z"/>
+</svg>

@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import PageLayout from '@/layout/page-layout/PageLayout';
 import BottomNavbar from '@/components/navbar/bottom-navbar/BottomNavbar';
-import type { BottomNavbarItem } from '@/components/navbar/bottom-navbar/BottomNavbar';
+import type { BottomNavbarItem } from '@/components/navbar/bottom-navbar/types';
 
 export interface BottomNavLayoutProps {
   readonly items?: BottomNavbarItem[];

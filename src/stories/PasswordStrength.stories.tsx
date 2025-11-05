@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useMemo } from 'react';
 import PasswordStrength, { type PasswordStrengthLevel } from '@/components/password-strength/PasswordStrength';
 
 const EXAMPLES: Record<string, { password: string; strength: PasswordStrengthLevel }> = {
@@ -54,17 +53,11 @@ export const Weak: Story = {
 
 export const DynamicExample: Story = {
   render: (args) => {
-    const example = useMemo(() => {
-      if (args.strength === 'weak') {
-        return EXAMPLES.weak;
-      }
-
-      if (args.strength === 'medium') {
-        return EXAMPLES.medium;
-      }
-
-      return EXAMPLES.strong;
-    }, [args.strength]);
+    const example = args.strength === 'weak'
+      ? EXAMPLES.weak
+      : args.strength === 'medium'
+        ? EXAMPLES.medium
+        : EXAMPLES.strong;
 
     return (
       <PasswordStrength

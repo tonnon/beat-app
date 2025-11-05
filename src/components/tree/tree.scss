@@ -1,0 +1,244 @@
+$tree-base-width: 280px;
+$tree-base-height: 300px;
+$tree-canvas-bg-start: $color-surface;
+$tree-canvas-bg-middle: color.mix($color-surface, $color-success-strong, $weight: 94%);
+$tree-canvas-bg-end: color.mix($color-surface, $color-success-strong, $weight: 88%);
+$tree-canvas-shadow: 0 18px 32px rgba($color-primary-dark, 0.14);
+$leaf-color-primary: $color-success-strong;
+$leaf-color-secondary: color.adjust($color-success-strong, $lightness: -6%);
+$leaf-color-tertiary: color.mix($color-success-strong, $color-primary-dark, $weight: 50%);
+$ornament-glow: rgba($button-color-primary, 0.6);
+$ornament-glow-active: rgba($button-color-primary, 0.9);
+
+.tree-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  gap: 1rem;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.tree-canvas {
+  position: relative;
+  width: 100%;
+  max-width: $tree-base-width * 2;
+  margin: 0 auto;
+  border-radius: 24px;
+  background: radial-gradient(
+    circle at 50% 20%,
+    $tree-canvas-bg-start,
+    $tree-canvas-bg-middle 60%,
+    $tree-canvas-bg-end 100%
+  );
+  box-shadow: $tree-canvas-shadow;
+  overflow: visible;
+}
+
+.tree-abs {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.tree-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: $tree-base-width;
+  height: $tree-base-height;
+  pointer-events: auto;
+}
+
+.treeicon {
+  position: absolute;
+  top: 80px;
+  left: 64px;
+}
+
+.leaf-icon {
+  position: absolute;
+  fill: $leaf-color-primary;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  pointer-events: auto;
+  border: none;
+  outline: none;
+}
+
+.leaf-icon:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.ornament {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    color.adjust($button-color-primary, $lightness: 16%),
+    $button-color-primary 60%,
+    color.adjust($button-color-primary-hover, $lightness: -6%) 100%
+  );
+  box-shadow: 0 0 12px $ornament-glow;
+  cursor: pointer;
+  transform-origin: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.ornament__core {
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: rgba($color-surface, 0.7);
+  box-shadow: inset 0 0 6px rgba($button-color-primary, 0.8);
+}
+
+.ornament:focus-visible,
+.ornament:hover {
+  outline: none;
+  transform: scale(1.1);
+  box-shadow: 0 0 18px $ornament-glow-active;
+}
+
+.ornament--active {
+  box-shadow: 0 0 24px $ornament-glow-active;
+  filter: saturate(1.3);
+}
+
+.leaf-icon:focus-visible {
+  outline: none;
+  border: none;
+  box-shadow: 0 0 0 3px rgba($color-success-strong, 0.35);
+}
+
+.leaf-icon:hover {
+  outline: none;
+  filter: brightness(1.2);
+}
+
+.leaf-icon:nth-child(3n + 1) {
+  fill: $leaf-color-primary;
+}
+
+.leaf-icon:nth-child(3n + 2) {
+  fill: $leaf-color-secondary;
+}
+
+.leaf-icon:nth-child(3n) {
+  fill: $leaf-color-tertiary;
+}
+
+.leaf-note {
+  position: absolute;
+  background: $color-surface;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 24px rgba($color-neutral-900, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 5;
+  pointer-events: auto;
+  max-width: clamp(180px, 40vw, 260px);
+}
+
+.leaf-textarea {
+  width: 100%;
+  border: 1px solid color.mix($color-input-border, $color-success-strong, $weight: 60%);
+  border-radius: 8px;
+  padding: 8px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-height: 88px;
+  color: $color-text;
+  background-color: $color-surface;
+}
+
+.leaf-note-close {
+  align-self: flex-end;
+  border: none;
+  background: $color-primary;
+  color: $color-surface;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.leaf-note-close:hover {
+  background: $color-primary-hover;
+}
+
+.leaf-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  flex-wrap: wrap;
+}
+
+.leaf-button {
+  border: none;
+  background: $color-primary;
+  color: $color-surface;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  min-width: 180px;
+}
+
+.leaf-button:hover:not(:disabled) {
+  background: $color-primary-hover;
+  transform: translateY(-1px);
+}
+
+.leaf-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.leaf-button--danger {
+  background: $color-error;
+}
+
+.leaf-button--danger:hover:not(:disabled) {
+  background: color.adjust($color-error, $lightness: -6%);
+}
+
+@media (max-width: 600px) {
+  .tree-container {
+    padding: 1.25rem 0.75rem 2rem;
+  }
+
+  .leaf-note {
+    max-width: 75vw;
+  }
+
+  .leaf-controls {
+    gap: 8px;
+  }
+
+  .leaf-button {
+    width: 100%;
+  }
+}
+

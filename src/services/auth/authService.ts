@@ -33,7 +33,7 @@ const extractErrorMessage = async (response: Response): Promise<string> => {
       return extracted;
     }
   } catch {
-    
+    // Ignore JSON parsing errors and try alternative extraction strategies.
   }
 
   try {
@@ -43,7 +43,7 @@ const extractErrorMessage = async (response: Response): Promise<string> => {
       return textPayload.trim();
     }
   } catch {
-    
+    // Ignore text extraction failures; a fallback message will be provided.
   }
 
   const statusText = response.statusText?.trim();
@@ -168,7 +168,7 @@ async function parseBooleanResponse(response: Response, keys: readonly string[])
       return jsonResult;
     }
   } catch {
-    
+    // Ignore JSON parsing errors and continue with alternative strategies.
   }
 
   try {
@@ -182,7 +182,7 @@ async function parseBooleanResponse(response: Response, keys: readonly string[])
       }
     }
   } catch {
-    
+    // Ignore text parsing errors and return a safe default.
   }
 
   return false;
@@ -400,7 +400,7 @@ export async function confirmEmail(payload: ConfirmEmailPayload): Promise<Confir
 
     try {
       return JSON.parse(responseText) as ConfirmEmailResponse;
-    } catch (parseError) {
+    } catch {
       throw new ApiError('Invalid response received from email confirmation endpoint', responseText);
     }
   } catch (error) {

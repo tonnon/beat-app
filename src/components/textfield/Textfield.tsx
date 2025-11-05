@@ -95,6 +95,7 @@ function DefaultTextfield({
 	forwardedRef,
 	...inputProps
 }: DefaultTextfieldProps & { readonly forwardedRef: ForwardedRef<HTMLInputElement> }) {
+ void _variant;
 	const { t } = useTranslation<'common'>('common');
 	const [isInvalid, setIsInvalid] = useState(false);
 	const { innerRef, handleRef } = useForwardedRef(forwardedRef);
@@ -279,6 +280,7 @@ function DatePickerTextfield({
 	onKeyDown,
 	forwardedRef,
 }: DatePickerTextfieldProps & { readonly forwardedRef: ForwardedRef<HTMLInputElement> }) {
+ void _variant;
 	const { i18n } = useTranslation();
 	const [isInvalid, setIsInvalid] = useState(false);
 	const { innerRef, handleRef } = useForwardedRef(forwardedRef);

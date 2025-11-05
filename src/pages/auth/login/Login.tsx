@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Textfield from '@/components/textfield/Textfield';
 import Link from '@/components/link/Link';
 import Warning from '@/components/warning/Warning';
-import { useAuthDialog } from '@/context/auth/AuthDialogContext';
+import { useAuthDialog } from '@/context/auth/useAuthDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { loginUser, ApiError } from '@/services/auth/authService';
 import { useUserData } from '@/hooks/userData';
@@ -15,6 +15,13 @@ import './login.scss';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REQUIRED_FIELDS_ERROR_KEY = 'signupScreen.errors.requiredFields';
 const INVALID_FIELDS_ERROR_KEY = 'signupScreen.errors.invalidFields';
+
+type FieldErrorStateOverrides = {
+  emailError?: boolean;
+  passwordError?: boolean;
+  emailValue?: string;
+  passwordValue?: string;
+};
 
 interface LoginProps {
   readonly formId: string;
@@ -47,7 +54,6 @@ export default function Login({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAccessToken, setPendingAccessToken] = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState<{ source: 'email' | 'password'; message: string } | null>(null);
   const { translateApiError } = useApiErrorTranslation();
 
   const {
@@ -70,73 +76,99 @@ export default function Login({
     setError(null);
     setEmailError(false);
     setPasswordError(false);
-    setFieldError(null);
   }, []);
+
+  const computeEmailErrorMessage = useCallback((value: string): string | null => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return t(REQUIRED_FIELDS_ERROR_KEY);
+    }
+
+    if (!EMAIL_REGEX.test(trimmed)) {
+      return t(INVALID_FIELDS_ERROR_KEY);
+    }
+
+    return null;
+  }, [t]);
+
+  const computePasswordErrorMessage = useCallback((value: string): string | null => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return t(REQUIRED_FIELDS_ERROR_KEY);
+    }
+
+    return null;
+  }, [t]);
+
+  const syncFieldErrorMessage = useCallback((overrides: FieldErrorStateOverrides = {}) => {
+    const nextEmailError = overrides.emailError ?? emailError;
+    const nextPasswordError = overrides.passwordError ?? passwordError;
+    const nextEmailValue = overrides.emailValue ?? email;
+    const nextPasswordValue = overrides.passwordValue ?? password;
+
+    if (nextEmailError) {
+      const message = computeEmailErrorMessage(nextEmailValue);
+      if (message) {
+        setError(message);
+        return;
+      }
+    }
+
+    if (nextPasswordError) {
+      const message = computePasswordErrorMessage(nextPasswordValue);
+      if (message) {
+        setError(message);
+        return;
+      }
+    }
+
+    setError(null);
+  }, [computeEmailErrorMessage, computePasswordErrorMessage, email, emailError, password, passwordError]);
 
   const handleEmailChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextEmail = event.target.value;
     setEmail(nextEmail);
     setEmailError(false);
-    if (fieldError?.source === 'email') {
-      setFieldError(null);
-      setError(null);
-    }
+    syncFieldErrorMessage({ emailError: false, emailValue: nextEmail });
     onEmailChange?.(nextEmail);
-  }, [fieldError?.source, onEmailChange]);
+  }, [onEmailChange, syncFieldErrorMessage]);
 
   const handlePasswordChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextPassword = event.target.value;
     setPassword(nextPassword);
     setPasswordError(false);
-    if (fieldError?.source === 'password') {
-      setFieldError(null);
-      setError(null);
-    }
-  }, [fieldError?.source]);
+    syncFieldErrorMessage({ passwordError: false, passwordValue: nextPassword });
+  }, [syncFieldErrorMessage]);
 
   const handleEmailBlur = useCallback(() => {
     const trimmedEmail = email.trim();
+    const validationMessage = computeEmailErrorMessage(trimmedEmail);
 
-    if (!trimmedEmail) {
-      const message = t(REQUIRED_FIELDS_ERROR_KEY);
+    if (validationMessage) {
       setEmailError(true);
-      setFieldError({ source: 'email', message });
-      setError(message);
-      return;
-    }
-
-    if (!EMAIL_REGEX.test(trimmedEmail)) {
-      const message = t(INVALID_FIELDS_ERROR_KEY);
-      setEmailError(true);
-      setFieldError({ source: 'email', message });
-      setError(message);
+      setError(validationMessage);
       return;
     }
 
     setEmailError(false);
-    if (fieldError?.source === 'email') {
-      setFieldError(null);
-      setError(null);
-    }
-  }, [email, fieldError?.source, t]);
+    syncFieldErrorMessage({ emailError: false, emailValue: trimmedEmail });
+  }, [computeEmailErrorMessage, email, syncFieldErrorMessage]);
 
   const handlePasswordBlur = useCallback(() => {
     const trimmedPassword = password.trim();
+    const validationMessage = computePasswordErrorMessage(trimmedPassword);
 
-    if (!trimmedPassword) {
-      const message = t(REQUIRED_FIELDS_ERROR_KEY);
+    if (validationMessage) {
       setPasswordError(true);
-      setFieldError({ source: 'password', message });
-      setError(message);
+      setError(validationMessage);
       return;
     }
 
     setPasswordError(false);
-    if (fieldError?.source === 'password') {
-      setFieldError(null);
-      setError(null);
-    }
-  }, [fieldError?.source, password, t]);
+    syncFieldErrorMessage({ passwordError: false, passwordValue: trimmedPassword });
+  }, [computePasswordErrorMessage, password, syncFieldErrorMessage]);
 
   const handleForgotPasswordClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -161,18 +193,16 @@ export default function Login({
     setPasswordError(hasPasswordError);
 
     if (hasEmailError || hasPasswordError) {
-      const message = hasEmailError
-        ? t(trimmedEmail ? INVALID_FIELDS_ERROR_KEY : REQUIRED_FIELDS_ERROR_KEY)
-        : t(REQUIRED_FIELDS_ERROR_KEY);
-      setFieldError({ source: hasEmailError ? 'email' : 'password', message });
-      setError(message);
+      syncFieldErrorMessage({
+        emailError: hasEmailError,
+        passwordError: hasPasswordError,
+        emailValue: trimmedEmail,
+        passwordValue: trimmedPassword,
+      });
       return;
     }
 
-    if (fieldError) {
-      setFieldError(null);
-      setError(null);
-    }
+    syncFieldErrorMessage({ emailError: false, passwordError: false, emailValue: trimmedEmail, passwordValue: trimmedPassword });
 
     updateSubmitting(true);
     setError(null);
@@ -186,8 +216,6 @@ export default function Login({
     } catch (caughtError) {
       setEmailError(true);
       setPasswordError(true);
-
-      setFieldError(null);
 
       const identificationFailedMessage = t('loginScreen.errors.identificationFailed');
       if (caughtError instanceof ApiError) {
@@ -203,7 +231,7 @@ export default function Login({
       setRefreshToken(null);
       updateSubmitting(false);
     }
-  }, [email, fieldError, isSubmitting, password, setAccessToken, setRefreshToken, t, translateApiError, updateSubmitting]);
+  }, [email, isSubmitting, password, setAccessToken, setRefreshToken, syncFieldErrorMessage, t, translateApiError, updateSubmitting]);
 
   useEffect(() => {
     if (!pendingAccessToken || !isUserLoaded || !fetchedUser) {
@@ -219,7 +247,6 @@ export default function Login({
     setPassword('');
     setEmailError(false);
     setPasswordError(false);
-  setFieldError(null);
 
     const destination = getDestinationForRole(fetchedUser.role);
 
@@ -242,18 +269,15 @@ export default function Login({
     updateSubmitting(false);
 
     if (userDataError instanceof ApiError) {
-      setFieldError(null);
       setError(translateApiError(userDataError.originalMessage));
       return;
     }
 
     if (userDataError instanceof Error) {
-      setFieldError(null);
       setError(translateApiError(userDataError.message));
       return;
     }
 
-    setFieldError(null);
     setError(t('errors.generic'));
   }, [isUserError, pendingAccessToken, setAccessToken, setRefreshToken, t, translateApiError, updateSubmitting, userDataError]);
 

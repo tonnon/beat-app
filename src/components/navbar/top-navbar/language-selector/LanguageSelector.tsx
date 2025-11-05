@@ -48,6 +48,28 @@ export default function LanguageSelector({
     [selectedLanguage],
   );
 
+  const dropdownItems = useMemo(
+    () =>
+      availableLanguages.map((language) => ({
+        id: language.code,
+        className: 'language-selector-item',
+        onSelect: () => handleLanguageChange(language.code),
+        content: (
+          <>
+            <img
+              src={language.flag}
+              alt={`${language.name} flag`}
+              className="language-selector-flag"
+              width="24"
+              height="24"
+            />
+            <span className="language-selector-code-single">{language.code}</span>
+          </>
+        ),
+      })),
+    [availableLanguages, handleLanguageChange],
+  );
+
   if (!selectedLanguageData) {
     return null;
   }
@@ -89,28 +111,6 @@ export default function LanguageSelector({
       </div>
     );
   }
-
-  const dropdownItems = useMemo(
-    () =>
-      availableLanguages.map((language) => ({
-        id: language.code,
-        className: 'language-selector-item',
-        onSelect: () => handleLanguageChange(language.code),
-        content: (
-          <>
-            <img
-              src={language.flag}
-              alt={`${language.name} flag`}
-              className="language-selector-flag"
-              width="24"
-              height="24"
-            />
-            <span className="language-selector-code-single">{language.code}</span>
-          </>
-        ),
-      })),
-    [availableLanguages, handleLanguageChange],
-  );
 
   return (
     <Dropdown

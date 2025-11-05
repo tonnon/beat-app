@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthDialogProvider } from '@/context/auth/AuthDialogContext';
+import { AuthDialogProvider } from '@/context/auth/AuthDialogProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {

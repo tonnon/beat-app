@@ -57,7 +57,7 @@ export function useFadeIn<TElement extends HTMLElement>(
         gsap.set(node, { autoAlpha: hiddenAlpha });
       }
     };
-  }, []);
+  }, [hiddenAlpha, isVisible, visibleAlpha]);
 
   useLayoutEffect(() => {
     const node = elementRef.current;

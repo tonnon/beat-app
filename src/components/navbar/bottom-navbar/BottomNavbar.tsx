@@ -1,50 +1,17 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
-import type { IconType } from 'react-icons';
-import { useNavigate } from 'react-router-dom';
-import {
-  FlagIcon,
-  ChecklistIcon,
-  EducationIcon,
-  HeadCircuitIcon,
-  CalendarIcon,
-} from '@/components/icons/Icons';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type { BottomNavbarItem } from './types';
+import { DEFAULT_BOTTOM_NAVBAR_ITEMS } from './defaultItems';
 import './bottom-navbar.scss';
 
-export interface BottomNavbarProps<
-  Item extends {
-    icon: IconType;
-    label?: string;
-    onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-    route?: string;
-  } = {
-    icon: IconType;
-    label?: string;
-    onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-    route?: string;
-  }
-> {
+export interface BottomNavbarProps<Item extends BottomNavbarItem = BottomNavbarItem> {
   items?: Item[];
   activeIndex?: number;
   defaultActiveIndex?: number;
   onChange?: (index: number, item: Item, event: MouseEvent<HTMLButtonElement>) => void;
   className?: string;
 }
-
-export type BottomNavbarItem = {
-  icon: IconType;
-  label?: string;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-  route?: string;
-};
-
-export const DEFAULT_BOTTOM_NAVBAR_ITEMS: BottomNavbarItem[] = [
-  { icon: FlagIcon, label: 'Daily', route: '/daily' },
-  { icon: ChecklistIcon, label: 'Questionnaires', route: '/questionnaires' },
-  { icon: EducationIcon, label: 'Education', route: '/education' },
-  { icon: HeadCircuitIcon, label: 'Pratice', route: '/pratice' },
-  { icon: CalendarIcon, label: 'Calendar', route: '/calendar' },
-];
 
 function clampIndex(index: number | undefined, length: number): number {
   if (!length) return 0;
@@ -62,6 +29,7 @@ export default function BottomNavbar<
   className,
 }: BottomNavbarProps<Item>) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const resolvedItems = useMemo(
     () => (items?.length ? items : (DEFAULT_BOTTOM_NAVBAR_ITEMS as Item[])),
@@ -99,8 +67,35 @@ export default function BottomNavbar<
     clampIndex(defaultActiveIndex, computedItems.length)
   );
 
+  const locationIndex = useMemo(() => {
+    const pathname = location.pathname;
+    const matchedIndex = computedItems.findIndex((item) => {
+      if (!item.route) {
+        return false;
+      }
+
+      if (pathname === item.route) {
+        return true;
+      }
+
+      return pathname.startsWith(item.route.endsWith('/') ? item.route : `${item.route}/`);
+    });
+
+    return matchedIndex >= 0 ? matchedIndex : undefined;
+  }, [computedItems, location.pathname]);
+
+  useEffect(() => {
+    if (!isControlled && locationIndex !== undefined && locationIndex !== internalIndex) {
+      setInternalIndex(locationIndex);
+    }
+  }, [internalIndex, isControlled, locationIndex]);
+
   const currentIndex = clampIndex(
-    isControlled ? activeIndex : internalIndex,
+    isControlled
+      ? activeIndex
+      : locationIndex !== undefined
+        ? locationIndex
+        : internalIndex,
     computedItems.length
   );
 

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import Checkbox from '@/components/checkbox/Checkbox';
 
 const meta = {
@@ -38,19 +38,21 @@ export const Disabled: Story = {
   },
 };
 
-export const Controlled: Story = {
-  render: (args) => {
-    const [checked, setChecked] = useState<boolean | 'indeterminate'>(false);
+function ControlledCheckboxStory(args: ComponentProps<typeof Checkbox>) {
+  const [checked, setChecked] = useState<boolean | 'indeterminate'>(false);
 
-    return (
-      <Checkbox
-        {...args}
-        checked={checked}
-        onCheckedChange={(value) => setChecked(value)}
-        label={`Current state: ${checked === 'indeterminate' ? 'indeterminate' : checked ? 'checked' : 'unchecked'}`}
-      />
-    );
-  },
+  return (
+    <Checkbox
+      {...args}
+      checked={checked}
+      onCheckedChange={(value) => setChecked(value)}
+      label={`Current state: ${checked === 'indeterminate' ? 'indeterminate' : checked ? 'checked' : 'unchecked'}`}
+    />
+  );
+}
+
+export const Controlled: Story = {
+  render: (args) => <ControlledCheckboxStory {...args} />,
   args: {
     label: 'Current state: unchecked',
   },

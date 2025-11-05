@@ -6,7 +6,7 @@ import MobileMenu, { type MobileMenuLink } from './mobile-menu/MobileMenu';
 import logoImage from '@/assets/img/logo.svg';
 import Button from '@/components/button/Button';
 import Link from '../../link/Link';
-import { useAuthDialog } from '@/context/auth/AuthDialogContext';
+import { useAuthDialog } from '@/context/auth/useAuthDialog';
 import { useAuthStore } from '@/stores/authStore';
 import './top-navbar.scss';
 import UserMenu from './user-menu/UserMenu';
@@ -55,7 +55,8 @@ export default function TopNavbar({
     setIsMobileMenuOpen((previousState) => !previousState);
   }, [isMobileViewport]);
 
-  const handleMobileLanguageChange = useCallback((_: Language) => {
+  const handleMobileLanguageChange = useCallback((language: Language) => {
+    void language;
     closeMobileMenu();
   }, [closeMobileMenu]);
 

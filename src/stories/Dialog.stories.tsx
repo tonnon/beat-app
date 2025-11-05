@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import Button from '@/components/button/Button';
 import Dialog from '@/components/dialog/Dialog';
 
@@ -31,33 +31,7 @@ export const Default: Story = {
     onOpenChange: () => undefined,
     children: <p>This action will remove all responses linked to the questionnaire.</p>,
   },
-  render: (args) => {
-    const [open, setOpen] = useState(args.isOpen);
-
-    return (
-      <div style={{ minHeight: '300px' }}>
-        <Button text="Open dialog" onClick={() => setOpen(true)} />
-        <Dialog
-          {...args}
-          isOpen={open}
-          onOpenChange={setOpen}
-          actions={(
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <Button
-                variant="border"
-                text="Cancel"
-                onClick={() => setOpen(false)}
-              />
-              <Button
-                text="Delete"
-                onClick={() => setOpen(false)}
-              />
-            </div>
-          )}
-        />
-      </div>
-    );
-  },
+  render: (args) => <DefaultDialogStory {...args} />, 
 };
 
 export const WithoutHeader: Story = {
@@ -68,15 +42,45 @@ export const WithoutHeader: Story = {
     subtitle: '',
     children: <p>This dialog has no header and can be used for simpler content.</p>,
   },
-  render: (args) => {
-    const [open, setOpen] = useState(args.isOpen);
+  render: (args) => <DialogWithoutHeaderStory {...args} />, 
+};
 
-    return (
+function DefaultDialogStory(args: ComponentProps<typeof Dialog>) {
+  const [open, setOpen] = useState(args.isOpen);
+
+  return (
+    <div style={{ minHeight: '300px' }}>
+      <Button text="Open dialog" onClick={() => setOpen(true)} />
       <Dialog
         {...args}
         isOpen={open}
         onOpenChange={setOpen}
+        actions={(
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <Button
+              variant="border"
+              text="Cancel"
+              onClick={() => setOpen(false)}
+            />
+            <Button
+              text="Delete"
+              onClick={() => setOpen(false)}
+            />
+          </div>
+        )}
       />
-    );
-  },
-};
+    </div>
+  );
+}
+
+function DialogWithoutHeaderStory(args: ComponentProps<typeof Dialog>) {
+  const [open, setOpen] = useState(args.isOpen);
+
+  return (
+    <Dialog
+      {...args}
+      isOpen={open}
+      onOpenChange={setOpen}
+    />
+  );
+}

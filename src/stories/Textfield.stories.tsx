@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent, type ComponentProps } from 'react';
 import Textfield from '@/components/textfield/Textfield';
 
 const meta = {
@@ -77,18 +77,7 @@ export const PasswordField: Story = {
 };
 
 export const Controlled: Story = {
-  render: (args) => {
-    const [value, setValue] = useState('Sophia Johnson');
-
-    return (
-      <Textfield
-        {...(args as Extract<typeof args, { variant?: 'default' }>)}
-        variant="default"
-        value={value}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value)}
-      />
-    );
-  },
+  render: (args) => <ControlledTextfieldStory {...args} />, 
   args: {
     label: 'Organization name',
     placeholder: 'e.g., Beat Corp',
@@ -97,20 +86,7 @@ export const Controlled: Story = {
 };
 
 export const DatePicker: Story = {
-  render: (args) => {
-    const [value, setValue] = useState<Date | null>(new Date());
-
-    return (
-      <div style={{ width: '320px' }}>
-        <Textfield
-          {...(args as Extract<typeof args, { variant: 'date-picker' }>)}
-          variant="date-picker"
-          value={value}
-          onDateChange={(date: Date | null) => setValue(date)}
-        />
-      </div>
-    );
-  },
+  render: (args) => <DatePickerTextfieldStory {...args} />, 
   args: {
     id: 'birth-date',
     label: 'Birth date',
@@ -121,3 +97,31 @@ export const DatePicker: Story = {
     placeholder: 'DD/MM/YYYY',
   },
 };
+
+function ControlledTextfieldStory(args: ComponentProps<typeof Textfield>) {
+  const [value, setValue] = useState('Sophia Johnson');
+
+  return (
+    <Textfield
+      {...args}
+      variant="default"
+      value={value}
+      onChange={(event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value)}
+    />
+  );
+}
+
+function DatePickerTextfieldStory(args: ComponentProps<typeof Textfield>) {
+  const [value, setValue] = useState<Date | null>(new Date());
+
+  return (
+    <div style={{ width: '320px' }}>
+      <Textfield
+        {...args}
+        variant="date-picker"
+        value={value}
+        onDateChange={(date: Date | null) => setValue(date)}
+      />
+    </div>
+  );
+}

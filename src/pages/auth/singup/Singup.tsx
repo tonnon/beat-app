@@ -236,7 +236,7 @@ export default function Singup({
         onErrorChangeRef.current(translatedError);
       }
     }
-  }, [i18n.language, rawError]);
+  }, [i18n.language, rawError, translateApiError]);
 
   const updateError = useCallback((nextError: string | null, nextRawError?: string | null) => {
     setError(nextError);
@@ -357,16 +357,52 @@ export default function Singup({
   }, [t]);
 
 
-  const clearGlobalErrorIfResolved = useCallback((overrides: FieldErrorOverrides = {}) => {
+  const syncValidationErrors = useCallback((overrides: FieldErrorOverrides = {}) => {
     const nextEmailHasError = overrides.emailHasError ?? emailHasError;
     const nextInviteCodeHasError = overrides.inviteCodeHasError ?? inviteCodeHasError;
     const nextPasswordHasError = overrides.passwordHasError ?? passwordHasError;
     const nextConfirmPasswordHasError = overrides.confirmPasswordHasError ?? confirmPasswordHasError;
 
-    if (!nextEmailHasError && !nextInviteCodeHasError && !nextPasswordHasError && !nextConfirmPasswordHasError) {
-      updateError(null);
+    if (nextEmailHasError) {
+      const message = validateEmailField(email.trim());
+      if (message) {
+        updateError(message);
+        return;
+      }
     }
-  }, [emailHasError, inviteCodeHasError, passwordHasError, confirmPasswordHasError, updateError]);
+
+    if (nextInviteCodeHasError) {
+      const message = validateInviteCodeField(inviteCode.trim());
+      if (message) {
+        updateError(message);
+        return;
+      }
+    }
+
+    if (nextPasswordHasError) {
+      const message = validatePasswordField(password.trim());
+      if (message) {
+        updateError(message);
+        return;
+      }
+    }
+
+    if (nextConfirmPasswordHasError) {
+      const message = validateConfirmPasswordField(confirmPassword.trim(), password.trim());
+      if (message) {
+        updateError(message);
+        return;
+      }
+    }
+
+    if (rawError) {
+      const translated = translateApiError(rawError);
+      updateError(translated, rawError);
+      return;
+    }
+
+    updateError(null);
+  }, [confirmPassword, confirmPasswordHasError, email, emailHasError, inviteCode, inviteCodeHasError, password, passwordHasError, rawError, translateApiError, updateError, validateConfirmPasswordField, validateEmailField, validateInviteCodeField, validatePasswordField]);
 
   const verifyInviteCode = useCallback(async (codeValue: string, intent: CheckEmailIntent) => {
     const trimmedCode = codeValue.trim();
@@ -398,7 +434,7 @@ export default function Singup({
         if (rawError === INVALID_INVITE_CODE_RAW_MESSAGE) {
           updateError(null);
         }
-        clearGlobalErrorIfResolved({ inviteCodeHasError: false });
+  syncValidationErrors({ inviteCodeHasError: false });
       }
 
       return isValid;
@@ -413,7 +449,7 @@ export default function Singup({
     }
   }, [
     checkCompanyCodeMutation,
-    clearGlobalErrorIfResolved,
+  syncValidationErrors,
     handleInviteCodeCheckError,
     inviteCode,
     rawError,
@@ -439,8 +475,8 @@ export default function Singup({
     }
 
     setEmailHasError(false);
-    clearGlobalErrorIfResolved({ emailHasError: false });
-  }, [clearGlobalErrorIfResolved, emailHasError, onEmailChange, updateError, validateEmailField]);
+    syncValidationErrors({ emailHasError: false });
+  }, [emailHasError, onEmailChange, syncValidationErrors, updateError, validateEmailField]);
 
   const handleInviteCodeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextInviteCode = event.target.value;
@@ -460,8 +496,8 @@ export default function Singup({
     }
 
     setInviteCodeHasError(false);
-    clearGlobalErrorIfResolved({ inviteCodeHasError: false });
-  }, [clearGlobalErrorIfResolved, inviteCodeHasError, onInviteCodeChange, updateError, validateInviteCodeField]);
+    syncValidationErrors({ inviteCodeHasError: false });
+  }, [inviteCodeHasError, onInviteCodeChange, syncValidationErrors, updateError, validateInviteCodeField]);
 
   const handlePasswordChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextPassword = event.target.value;
@@ -502,8 +538,8 @@ export default function Singup({
       setConfirmPasswordHasError(false);
     }
 
-    clearGlobalErrorIfResolved({ passwordHasError: false, confirmPasswordHasError: false });
-  }, [clearGlobalErrorIfResolved, confirmPassword, confirmPasswordHasError, onPasswordChange, passwordHasError, updateError, validateConfirmPasswordField, validatePasswordField]);
+    syncValidationErrors({ passwordHasError: false, confirmPasswordHasError: false });
+  }, [confirmPassword, confirmPasswordHasError, onPasswordChange, passwordHasError, syncValidationErrors, updateError, validateConfirmPasswordField, validatePasswordField]);
 
   const handleConfirmPasswordChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const nextConfirmPassword = event.target.value;
@@ -543,8 +579,8 @@ export default function Singup({
       setPasswordHasError(false);
     }
 
-    clearGlobalErrorIfResolved({ confirmPasswordHasError: false, passwordHasError: false });
-  }, [clearGlobalErrorIfResolved, confirmPasswordHasError, onConfirmPasswordChange, password, passwordHasError, updateError, validateConfirmPasswordField, validatePasswordField]);
+    syncValidationErrors({ confirmPasswordHasError: false, passwordHasError: false });
+  }, [confirmPasswordHasError, onConfirmPasswordChange, password, passwordHasError, syncValidationErrors, updateError, validateConfirmPasswordField, validatePasswordField]);
 
   const handleEmailBlur = useCallback(() => {
     const trimmedEmail = email.trim();
@@ -556,8 +592,8 @@ export default function Singup({
       return;
     }
 
-    setEmailHasError(false);
-    clearGlobalErrorIfResolved({ emailHasError: false });
+  setEmailHasError(false);
+  syncValidationErrors({ emailHasError: false });
 
     if (!trimmedEmail) {
       return;
@@ -572,7 +608,7 @@ export default function Singup({
     }
 
     checkEmailMutation.mutate({ email: trimmedEmail, intent: 'blur' });
-  }, [checkEmailMutation, clearGlobalErrorIfResolved, email, updateError, validateEmailField]);
+  }, [checkEmailMutation, email, syncValidationErrors, updateError, validateEmailField]);
 
   const handleInviteCodeBlur = useCallback(() => {
     const trimmedInviteCodeValue = inviteCode.trim();
@@ -602,8 +638,8 @@ export default function Singup({
     }
 
     setPasswordHasError(false);
-    clearGlobalErrorIfResolved({ passwordHasError: false });
-  }, [clearGlobalErrorIfResolved, confirmPassword, password, updateError, validatePasswordField]);
+    syncValidationErrors({ passwordHasError: false });
+  }, [confirmPassword, password, syncValidationErrors, updateError, validatePasswordField]);
 
   const handleConfirmPasswordBlur = useCallback(() => {
     const validationMessage = validateConfirmPasswordField(confirmPassword, password);
@@ -621,9 +657,9 @@ export default function Singup({
     const passwordValidationMessage = validatePasswordField(password);
     if (!passwordValidationMessage) {
       setPasswordHasError(false);
-      clearGlobalErrorIfResolved({ confirmPasswordHasError: false, passwordHasError: false });
+      syncValidationErrors({ confirmPasswordHasError: false, passwordHasError: false });
     }
-  }, [clearGlobalErrorIfResolved, confirmPassword, password, updateError, validateConfirmPasswordField, validatePasswordField]);
+  }, [confirmPassword, password, syncValidationErrors, updateError, validateConfirmPasswordField, validatePasswordField]);
 
   const handleTermsLinkClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
