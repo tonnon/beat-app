@@ -38,6 +38,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+type DefaultVariantProps = Extract<ComponentProps<typeof Textfield>, { variant?: 'default' }>;
+type DatePickerVariantProps = Extract<ComponentProps<typeof Textfield>, { variant: 'date-picker' }>;
+
 export const Default: Story = {};
 
 export const Required: Story = {
@@ -77,7 +80,7 @@ export const PasswordField: Story = {
 };
 
 export const Controlled: Story = {
-  render: (args) => <ControlledTextfieldStory {...args} />, 
+  render: (args) => <ControlledTextfieldStory {...(args as DefaultVariantProps)} />, 
   args: {
     label: 'Organization name',
     placeholder: 'e.g., Beat Corp',
@@ -86,7 +89,7 @@ export const Controlled: Story = {
 };
 
 export const DatePicker: Story = {
-  render: (args) => <DatePickerTextfieldStory {...args} />, 
+  render: (args) => <DatePickerTextfieldStory {...(args as DatePickerVariantProps)} />, 
   args: {
     id: 'birth-date',
     label: 'Birth date',
@@ -98,12 +101,14 @@ export const DatePicker: Story = {
   },
 };
 
-function ControlledTextfieldStory(args: ComponentProps<typeof Textfield>) {
+function ControlledTextfieldStory(args: DefaultVariantProps) {
   const [value, setValue] = useState('Sophia Johnson');
+  const { variant: _variant, ...rest } = args;
+  void _variant;
 
   return (
     <Textfield
-      {...args}
+      {...rest}
       variant="default"
       value={value}
       onChange={(event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value)}
@@ -111,13 +116,15 @@ function ControlledTextfieldStory(args: ComponentProps<typeof Textfield>) {
   );
 }
 
-function DatePickerTextfieldStory(args: ComponentProps<typeof Textfield>) {
+function DatePickerTextfieldStory(args: DatePickerVariantProps) {
   const [value, setValue] = useState<Date | null>(new Date());
+  const { variant: _variant, ...rest } = args;
+  void _variant;
 
   return (
     <div style={{ width: '320px' }}>
       <Textfield
-        {...args}
+        {...rest}
         variant="date-picker"
         value={value}
         onDateChange={(date: Date | null) => setValue(date)}
