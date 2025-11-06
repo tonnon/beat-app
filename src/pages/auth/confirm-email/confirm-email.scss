@@ -5,7 +5,6 @@ $confirm-email-subtitle-font-size: 1.125rem;
 $confirm-email-subtitle-color: var(--color-neutral-600);
 $confirm-email-message-font-size: 1rem;
 $confirm-email-message-color: var(--color-neutral-700);
-$confirm-email-user-id-width: 100%;
 
 .confirm-email {
   display: flex;
@@ -30,10 +29,6 @@ $confirm-email-user-id-width: 100%;
   margin: 0;
   font-size: $confirm-email-message-font-size;
   color: $confirm-email-message-color;
-}
-
-.confirm-email-user-id-field {
-  width: $confirm-email-user-id-width;
 }
 
 .confirm-email-resend-link {
