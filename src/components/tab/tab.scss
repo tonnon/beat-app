@@ -1,0 +1,137 @@
+$tab-gap: 1.25rem;
+$tab-list-gap: 0.5rem;
+$tab-trigger-padding-y: 0.65rem;
+$tab-trigger-padding-x: 1.25rem;
+$tab-trigger-radius: 3px;
+$tab-trigger-font-weight: 600;
+$tab-trigger-font-size: 0.95rem;
+$tab-trigger-letter-spacing: 0.02em;
+$tab-border-color: rgba(7, 159, 164, 0.18);
+$tab-trigger-hover-bg: rgba(7, 159, 164, 0.08);
+$tab-trigger-active-bg: rgba(7, 159, 164, 0.15);
+$tab-trigger-disabled-opacity: 0.4;
+$tab-content-gap: 1.5rem;
+$tab-underline-height: 2px;
+$tab-transition: all 180ms ease;
+
+.app-tab-root {
+	display: flex;
+	flex-direction: column;
+	gap: $tab-gap;
+	width: 100%;
+}
+
+.app-tab-root[data-orientation='vertical'] {
+	flex-direction: row;
+	align-items: flex-start;
+}
+
+.app-tab-list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: $tab-list-gap;
+	border-bottom: 1px solid $tab-border-color;
+}
+
+	.app-tab-root[data-orientation='vertical'] .app-tab-list {
+		flex-direction: column;
+		align-items: stretch;
+		flex: 0 0 auto;
+		border-bottom: none;
+		border-right: 1px solid $tab-border-color;
+		padding-bottom: 0;
+		padding-right: 0.75rem;
+		min-width: 11rem;
+	}
+
+.app-tab-trigger {
+	all: unset;
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: $tab-trigger-padding-y $tab-trigger-padding-x;
+	border-radius: $tab-trigger-radius;
+	font-weight: $tab-trigger-font-weight;
+	font-size: $tab-trigger-font-size;
+	letter-spacing: $tab-trigger-letter-spacing;
+	color: $color-neutral-800;
+	cursor: pointer;
+	transition: $tab-transition;
+	line-height: 1;
+	background-color: transparent;
+}
+
+.app-tab-trigger::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: $tab-underline-height;
+	border-radius: $tab-underline-height;
+	background: transparent;
+	transition: $tab-transition;
+}
+
+.app-tab-trigger:hover,
+.app-tab-trigger[data-state='active'] {
+	background-color: $tab-trigger-hover-bg;
+	color: $color-primary;
+}
+
+.app-tab-trigger[data-state='active']::after {
+	background: $color-primary;
+}
+
+.app-tab-root[data-orientation='vertical'] .app-tab-trigger::after {
+	left: auto;
+	right: -0.75rem;
+	top: 12px;
+	bottom: 12px;
+	width: $tab-underline-height;
+	height: auto;
+	background: transparent;
+}
+
+.app-tab-root[data-orientation='vertical'] .app-tab-trigger[data-state='active']::after {
+	background: $color-primary;
+}
+
+.app-tab-trigger:focus-visible {
+	box-shadow: 0 0 0 2px rgba($color-primary, 0.12);
+}
+
+.app-tab-trigger[data-disabled] {
+	cursor: not-allowed;
+	opacity: $tab-trigger-disabled-opacity;
+}
+
+.app-tab-content {
+	width: 100%;
+	display: none;
+	flex-direction: column;
+	gap: $tab-content-gap;
+}
+
+.app-tab-content[data-state='active'] {
+	display: flex;
+	animation: tab-fade-in 200ms ease;
+}
+
+.app-tab-root[data-orientation='vertical'] .app-tab-content {
+	padding-left: 0.5rem;
+}
+
+@keyframes tab-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
