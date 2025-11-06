@@ -27,6 +27,9 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 2048,
+  },
   test: {
     projects: [{
       extends: true,
