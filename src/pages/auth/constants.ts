@@ -7,7 +7,6 @@ export type AuthView =
   | 'informedConsent'
   | 'informedConsentText'
   | 'confirmEmail'
-  | 'confirmEmailSuccess'
   | 'signupSuccess';
 
 export type ScrollableViewKey = 'termsOfUse' | 'privacyPolicy' | 'informedConsentText';

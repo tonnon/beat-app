@@ -23,22 +23,6 @@ export default function AppRoutes() {
           </PublicRoute>
         } 
       />
-      <Route
-        path="/confirm-token-email"
-        element={
-          <PublicRoute>
-            <HomePage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/home/confirm-token-email"
-        element={
-          <PublicRoute>
-            <HomePage />
-          </PublicRoute>
-        }
-      />
       <Route 
         element={
           <ProtectedRoute>
