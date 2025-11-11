@@ -28,13 +28,13 @@ export default function SurveyQuestionStep({
   return (
     <article className="survey-question-step">
       {(pretitle || shouldRenderHelpParagraph) ? (
-        <div className="survey-question-step__content">
-          {pretitle ? <p className="survey-question-step__pretitle">{pretitle}</p> : null}
-          {shouldRenderHelpParagraph ? <p className="survey-question-step__help">{helpText}</p> : null}
+        <div className="survey-question-step-content">
+          {pretitle ? <p className="survey-question-step-pretitle">{pretitle}</p> : null}
+          {shouldRenderHelpParagraph ? <p className="survey-question-step-help">{helpText}</p> : null}
         </div>
       ) : null}
       {isDateQuestion ? (
-        <div className="survey-question-step__field">
+        <div className="survey-question-step-field">
           <Textfield
             id={`survey-question-${question.id}-date`}
             variant="date-picker"
@@ -55,12 +55,12 @@ export function SurveyQuestionSkeleton() {
 
   return (
     <article className="survey-question-step">
-      <div className="survey-question-step__skeleton-wrapper" aria-hidden="true">
-        <Skeleton className="survey-question-step__skeleton-pretitle" />
-        <Skeleton className="survey-question-step__skeleton-title" />
-        <div className="survey-question-step__skeleton-options">
+      <div className="survey-question-step-skeleton-wrapper" aria-hidden="true">
+        <Skeleton className="survey-question-step-skeleton-pretitle" />
+        <Skeleton className="survey-question-step-skeleton-title" />
+        <div className="survey-question-step-skeleton-options">
           {optionPlaceholders.map((_, index) => (
-            <Skeleton key={`option-${index}`} className="survey-question-step__skeleton-option" />
+            <Skeleton key={`option-${index}`} className="survey-question-step-skeleton-option" />
           ))}
         </div>
       </div>

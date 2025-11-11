@@ -10,7 +10,7 @@
   margin-bottom: 24px;
 }
 
-.survey-question-step__content {
+.survey-question-step-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -18,21 +18,21 @@
   width: min(520px, 100%);
 }
 
-.survey-question-step__pretitle {
+.survey-question-step-pretitle {
   font-size: 1rem;
   font-weight: 600;
   color: var(--gray-12, #3b3b3b);
   text-transform: uppercase;
 }
 
-.survey-question-step__help {
+.survey-question-step-help {
   font-size: 1rem;
   font-weight: 400;
   color: var(--gray-11, #6b6b6b);
   line-height: 1.5;
 }
 
-.survey-question-step__skeleton-wrapper {
+.survey-question-step-skeleton-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -40,26 +40,26 @@
   width: min(520px, 100%);
 }
 
-.survey-question-step__skeleton-pretitle {
+.survey-question-step-skeleton-pretitle {
   width: 12rem;
   height: 1rem;
   border-radius: 0.5rem;
 }
 
-.survey-question-step__skeleton-title {
+.survey-question-step-skeleton-title {
   width: 100%;
   height: 2.5rem;
   border-radius: 1.25rem;
 }
 
-.survey-question-step__skeleton-options {
+.survey-question-step-skeleton-options {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
 }
 
-.survey-question-step__skeleton-option {
+.survey-question-step-skeleton-option {
   width: 100%;
   height: 1.75rem;
   border-radius: 0.875rem;
@@ -76,7 +76,7 @@
   min-height: 12rem;
 }
 
-.survey-questions-loading__message {
+.survey-questions-loading-message {
   margin: 0;
   color: var(--gray-11, #6b6b6b);
   text-align: center;
@@ -91,27 +91,27 @@
   gap: 1.5rem;
 }
 
-.survey-dialog-actions__button {
+.survey-dialog-actions-button {
   display: flex;
   flex: 0 0 auto;
 }
 
-.survey-dialog-actions__button--left {
+.survey-dialog-actions-button-left {
   justify-content: flex-start;
 }
 
-.survey-dialog-actions__button--right {
+.survey-dialog-actions-button-right {
   justify-content: flex-end;
 }
 
-.survey-dialog-actions__progress {
+.survey-dialog-actions-progress {
   flex: 1;
   display: flex;
   justify-content: center;
   font-weight: 700;
 }
 
-.survey-dialog-actions__button-placeholder {
+.survey-dialog-actions-button-placeholder {
   visibility: hidden;
   pointer-events: none;
 }

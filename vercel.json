@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://api-beatapp.oleandrosantos.me/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
     }
   ]
 }

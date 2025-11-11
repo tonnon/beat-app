@@ -820,46 +820,19 @@ export default function QuestionnairesPage() {
 
     const isLastStep = currentQuestionIndex >= totalQuestions - 1;
 
-    const normalizedType = currentQuestion?.type?.trim().toLowerCase() ?? '';
-    const isDateQuestion = normalizedType === 'date';
-    const isContinueDisabled = (isDateQuestion && !currentQuestionAnswer) || isSubmittingAnswer;
+    if (previousValue instanceof Date && value instanceof Date) {
+      if (previousValue.getTime() === value.getTime()) {
+        return previous;
+      }
+    } else if (previousValue === value) {
+      return previous;
+    }
 
-    return (
-      <div className="survey-dialog-actions">
-        <div className="survey-dialog-actions__button survey-dialog-actions__button--left">
-          {currentQuestionIndex > 0 ? (
-            <Button
-              variant="border"
-              onClick={handleGoBack}
-              icon={<ArrowLeftIcon size={16} />}
-              iconPosition="left"
-            >
-              {dialogBackLabel}
-            </Button>
-          ) : (
-            <Button
-              variant="border"
-              className="survey-dialog-actions__button-placeholder"
-              aria-hidden="true"
-              disabled
-            >
-              {dialogBackLabel}
-            </Button>
-          )}
-        </div>
-        <div className="survey-dialog-actions__progress" aria-live="polite">
-          {progressLabel}
-        </div>
-        <div className="survey-dialog-actions__button survey-dialog-actions__button--right">
-          <Button
-            variant="solid"
-            onClick={handleGoNext}
-            disabled={isContinueDisabled}
-          >
-            {isLastStep ? dialogCloseLabel : dialogContinueLabel}
-          </Button>
-        </div>
-      </div>
+    if (value === null) {
+      const next = { ...previous };
+      delete next[questionId];
+      return next;
+    }
     );
   }, [
     closeSurveyDialog,
