@@ -12,6 +12,7 @@ export interface CardModel {
   readonly status: CardStatus;
   readonly statusLabel: string;
   readonly progress: number;
+  readonly customContinueLabel?: string;
 }
 
 export type CardActionHandler = (id: string) => void;
@@ -19,6 +20,7 @@ export type CardActionHandler = (id: string) => void;
 export interface CardProps extends CardModel {
   readonly responsesLabel: string;
   readonly continueLabel: string;
+  readonly customContinueLabel?: string;
   readonly onViewResponses?: CardActionHandler;
   readonly onContinue?: CardActionHandler;
   readonly headerColor?: string;
@@ -33,6 +35,7 @@ export default function Card({
   progress,
   responsesLabel,
   continueLabel,
+  customContinueLabel,
   onViewResponses,
   onContinue,
   headerColor,
@@ -68,7 +71,7 @@ export default function Card({
           onClick={() => onContinue?.(id)}
           disabled={isComplete}
         >
-          {continueLabel}
+          {customContinueLabel ?? continueLabel}
         </Button>
       </footer>
     </article>

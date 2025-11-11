@@ -23,9 +23,17 @@ export default function AppRoutes() {
           </PublicRoute>
         } 
       />
+      <Route
+        path="/confirm-token-email"
+        element={
+          <PublicRoute allowWhenAuthenticated>
+            <HomePage />
+          </PublicRoute>
+        }
+      />
       <Route 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Employee']}>
             <BottomNavLayout items={DEFAULT_BOTTOM_NAVBAR_ITEMS} />
           </ProtectedRoute>
         }
@@ -39,7 +47,7 @@ export default function AppRoutes() {
       <Route 
         path="/admin" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Administrator', 'Editor']}>
             <AdminPage />
           </ProtectedRoute>
         } 
@@ -47,7 +55,7 @@ export default function AppRoutes() {
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Manager']}>
             <ManagerPage />
           </ProtectedRoute>
         } 

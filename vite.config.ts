@@ -18,6 +18,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/response': {
+        target: 'https://api-beatapp.oleandrosantos.me',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
   css: {

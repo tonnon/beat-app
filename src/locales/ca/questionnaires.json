@@ -18,7 +18,18 @@
   },
   "actions": {
     "responses": "Respostes",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "start": "Començar",
+    "back": "Tornar",
+    "close": "Tancar",
+    "retry": "Reintentar"
+  },
+  "dialog": {
+    "title": "{{title}}",
+    "subtitle": "Completa les preguntes per continuar",
+    "loading": "Carregant preguntes...",
+    "error": "No s'han pogut carregar les preguntes. Torna-ho a intentar.",
+    "step": "Pregunta {{current}} de {{total}}"
   },
   "empty": {
     "title": "No hi ha qüestionaris per a aquest filtre",

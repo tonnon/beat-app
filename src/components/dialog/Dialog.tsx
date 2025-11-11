@@ -7,7 +7,7 @@ export interface DialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: ReactNode;
   actions?: ReactNode;
   afterBody?: ReactNode;

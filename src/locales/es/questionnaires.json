@@ -18,7 +18,18 @@
   },
   "actions": {
     "responses": "Respuestas",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "start": "Comenzar",
+    "back": "Volver",
+    "close": "Cerrar",
+    "retry": "Reintentar"
+  },
+  "dialog": {
+    "title": "{{title}}",
+    "subtitle": "Completa las preguntas para continuar",
+    "loading": "Cargando preguntas...",
+    "error": "No fue posible cargar las preguntas. Intenta nuevamente.",
+    "step": "Pregunta {{current}} de {{total}}"
   },
   "empty": {
     "title": "No hay cuestionarios para este filtro",

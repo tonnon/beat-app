@@ -15,9 +15,13 @@ const API_PATHS = {
   login: '/api/users/login',
   me: '/api/users/me',
   confirmEmail: '/api/users/confirm-email',
+  resendConfirmationEmail: '/api/users/resend-email-confirmation',
   register: '/api/users/register',
   checkEmail: '/api/users/check-email',
-  checkCompanyCode: '/api/companies/check-code'
+  checkCompanyCode: '/api/companies/check-code',
+  cardSurveys: '/api/UserSurveyRounds/surveys',
+  surveyQuestions: (surveyId: number | string) => `/api/surveys/${surveyId}/with-questions`,
+  questionAnswer: '/response',
 } as const;
 
 const resolveApiUrl = (path: string) => `${API_BASE_URL}${path}`;

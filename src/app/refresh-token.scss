@@ -1,0 +1,18 @@
+.session-expired-dialog__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.session-expired-dialog__message {
+  margin: 0;
+  color: var(--gray-12, #1f1f1f);
+  line-height: 1.5;
+}
+
+.session-expired-dialog__actions {
+  display: flex;
+  justify-content: center;
+}

@@ -50,6 +50,7 @@ export default function Login({
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,6 +76,7 @@ export default function Login({
   const clearErrors = useCallback(() => {
     setError(null);
     setEmailError(false);
+    setEmailErrorMessage(null);
     setPasswordError(false);
   }, []);
 
@@ -83,6 +85,10 @@ export default function Login({
 
     if (!trimmed) {
       return t(REQUIRED_FIELDS_ERROR_KEY);
+    }
+
+    if (!trimmed.includes('@')) {
+      return t('signupScreen.errors.emailMissingAt');
     }
 
     if (!EMAIL_REGEX.test(trimmed)) {
@@ -110,10 +116,13 @@ export default function Login({
 
     if (nextEmailError) {
       const message = computeEmailErrorMessage(nextEmailValue);
+      setEmailErrorMessage(message);
       if (message) {
         setError(message);
         return;
       }
+    } else {
+      setEmailErrorMessage(null);
     }
 
     if (nextPasswordError) {
@@ -131,6 +140,7 @@ export default function Login({
     const nextEmail = event.target.value;
     setEmail(nextEmail);
     setEmailError(false);
+    setEmailErrorMessage(null);
     syncFieldErrorMessage({ emailError: false, emailValue: nextEmail });
     onEmailChange?.(nextEmail);
   }, [onEmailChange, syncFieldErrorMessage]);
@@ -148,11 +158,13 @@ export default function Login({
 
     if (validationMessage) {
       setEmailError(true);
+      setEmailErrorMessage(validationMessage);
       setError(validationMessage);
       return;
     }
 
     setEmailError(false);
+    setEmailErrorMessage(null);
     syncFieldErrorMessage({ emailError: false, emailValue: trimmedEmail });
   }, [computeEmailErrorMessage, email, syncFieldErrorMessage]);
 
@@ -218,14 +230,15 @@ export default function Login({
       setPasswordError(true);
 
       const identificationFailedMessage = t('loginScreen.errors.identificationFailed');
+      let translatedMessage: string | null = null;
+
       if (caughtError instanceof ApiError) {
-        setError(identificationFailedMessage);
+        translatedMessage = translateApiError(caughtError.originalMessage);
       } else if (caughtError instanceof Error) {
-        const translatedMessage = translateApiError(caughtError.message);
-        setError(translatedMessage || identificationFailedMessage);
-      } else {
-        setError(identificationFailedMessage);
+        translatedMessage = translateApiError(caughtError.message);
       }
+
+      setError(translatedMessage || identificationFailedMessage);
 
       setAccessToken(null);
       setRefreshToken(null);
@@ -302,6 +315,7 @@ export default function Login({
             onBlur={handleEmailBlur}
             disabled={isSubmitting}
             error={emailError}
+            description={emailErrorMessage ?? undefined}
             required
           />
           <Textfield

@@ -1,0 +1,121 @@
+.survey-question-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  width: 100%;
+  padding: 0 1.5rem;
+  gap: 1.5rem;
+  margin-bottom: 24px;
+}
+
+.survey-question-step__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: min(520px, 100%);
+}
+
+.survey-question-step__pretitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-12, #3b3b3b);
+  text-transform: uppercase;
+}
+
+.survey-question-step__help {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--gray-11, #6b6b6b);
+  line-height: 1.5;
+}
+
+.survey-question-step__skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(520px, 100%);
+}
+
+.survey-question-step__skeleton-pretitle {
+  width: 12rem;
+  height: 1rem;
+  border-radius: 0.5rem;
+}
+
+.survey-question-step__skeleton-title {
+  width: 100%;
+  height: 2.5rem;
+  border-radius: 1.25rem;
+}
+
+.survey-question-step__skeleton-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.survey-question-step__skeleton-option {
+  width: 100%;
+  height: 1.75rem;
+  border-radius: 0.875rem;
+}
+
+.survey-questions-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2.5rem 1.5rem;
+  width: 100%;
+  min-height: 12rem;
+}
+
+.survey-questions-loading__message {
+  margin: 0;
+  color: var(--gray-11, #6b6b6b);
+  text-align: center;
+  font-size: var(--font-size-2, 1rem);
+}
+
+.survey-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1.5rem;
+}
+
+.survey-dialog-actions__button {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.survey-dialog-actions__button--left {
+  justify-content: flex-start;
+}
+
+.survey-dialog-actions__button--right {
+  justify-content: flex-end;
+}
+
+.survey-dialog-actions__progress {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.survey-dialog-actions__button-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.survey-questions-dialog .dialog-body {
+  overflow-y: visible !important;
+}

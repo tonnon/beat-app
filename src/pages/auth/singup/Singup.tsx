@@ -231,9 +231,10 @@ export default function Singup({
   useEffect(() => {
     if (rawError) {
       const translatedError = translateApiError(rawError);
-      setError(translatedError);
+      const nextError = translatedError ?? rawError;
+      setError(nextError);
       if (onErrorChangeRef.current) {
-        onErrorChangeRef.current(translatedError);
+        onErrorChangeRef.current(nextError);
       }
     }
   }, [i18n.language, rawError, translateApiError]);
@@ -260,15 +261,13 @@ export default function Singup({
 
     if (err instanceof ApiError) {
       const translatedError = translateApiError(err.originalMessage);
-      const normalizedMessage = err.originalMessage?.toLowerCase?.() ?? '';
-      if (normalizedMessage.includes('email already')) {
-        setEmailHasError(true);
-      }
-      updateError(translatedError, err.originalMessage);
+      const fallbackMessage = translatedError ?? err.originalMessage ?? t('signupScreen.errors.registrationFailed');
+      setEmailHasError(true);
+      updateError(fallbackMessage, err.originalMessage);
       return;
     }
 
-    setEmailHasError(false);
+    setEmailHasError(true);
     if (err instanceof Error) {
       const errorMessage = err.message || t('signupScreen.errors.registrationFailed');
       updateError(errorMessage, errorMessage);

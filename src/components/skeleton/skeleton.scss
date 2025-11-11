@@ -1,0 +1,20 @@
+.app-skeleton {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, rgba(240, 240, 240, 0.2) 0%, rgba(240, 240, 240, 0.6) 50%, rgba(240, 240, 240, 0.2) 100%);
+  background-color: rgba(0, 0, 0, 0.08);
+  background-size: 200% 100%;
+  animation: app-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes app-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

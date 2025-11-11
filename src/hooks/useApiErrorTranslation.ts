@@ -1,38 +1,42 @@
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import type esAuth from '@/locales/es/auth.json';
 
 export function useApiErrorTranslation() {
-  const { i18n } = useTranslation('auth');
+  const { t } = useTranslation<'auth'>('auth');
 
-  const translateApiError = (errorMessage: string): string => {
-    const sanitizedMessage = errorMessage.trim();
-    const normalizedKey = sanitizedMessage.replace(/\.$/, '');
+  const translateApiError = useCallback((originalMessage: string | null | undefined) => {
+    if (!originalMessage) {
+      return null;
+    }
 
-    const authResource = i18n.getResourceBundle(i18n.language, 'auth') as Record<string, unknown> | undefined;
-    const errorSources = (
-      authResource
-        ? [
-          (authResource.signupScreen as Record<string, unknown> | undefined)?.apiErrors,
-          authResource.errors as Record<string, string> | undefined,
-          (authResource.confirmEmail as Record<string, unknown> | undefined)?.errors,
-          (authResource.informedConsent as Record<string, unknown> | undefined)?.errors,
-        ]
-        : []
-    ).filter(Boolean) as Array<Record<string, string>>;
+    const trimmedMessage = originalMessage.trim();
 
-    for (const source of errorSources) {
-      if (source[normalizedKey]) {
-        return source[normalizedKey];
-      }
+    if (!trimmedMessage) {
+      return null;
+    }
 
-      for (const possibleKey of Object.keys(source)) {
-        if (sanitizedMessage.toLowerCase().includes(possibleKey.toLowerCase())) {
-          return source[possibleKey];
-        }
+    const normalizedMessage = trimmedMessage.replace(/\.$/, '');
+    const authErrors = t('errors', { returnObjects: true }) as (typeof esAuth)['errors'];
+
+    if (!authErrors || typeof authErrors !== 'object') {
+      return null;
+    }
+
+    const directMatch = authErrors[normalizedMessage as keyof typeof authErrors];
+    if (directMatch) {
+      return directMatch;
+    }
+
+    const lowerCaseMessage = normalizedMessage.toLowerCase();
+    for (const [key, value] of Object.entries(authErrors)) {
+      if (lowerCaseMessage.includes(key.toLowerCase())) {
+        return value;
       }
     }
 
-    return sanitizedMessage;
-  };
+    return null;
+  }, [t]);
 
   return { translateApiError };
 }

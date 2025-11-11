@@ -5,7 +5,7 @@ const RAW_ROLE_DESTINATIONS: Record<string, string> = {
   Editor: '/admin',
 };
 
-const normalizeRole = (role: string): string => {
+export const normalizeRole = (role: string): string => {
   return role
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

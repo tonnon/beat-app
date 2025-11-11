@@ -6,6 +6,7 @@ import Dialog from '@/components/dialog/Dialog';
 import Button from '@/components/button/Button';
 import { API_PATHS } from '@/config/api';
 import { useAuthStore } from '@/stores/authStore';
+import './refresh-token.scss';
 
 const SESSION_EXPIRED_STATUS = 401;
 
@@ -80,15 +81,19 @@ export default function RefreshToken() {
 			title={t('title')}
 			subtitle={t('subtitle')}
 			actions={(
-				<Button
-					variant="solid"
-					size="md"
-					text={t('action')}
-					onClick={handleActionClick}
-				/>
+				<div className="session-expired-dialog__actions">
+					<Button
+						variant="solid"
+						size="md"
+						text={t('action')}
+						onClick={handleActionClick}
+					/>
+				</div>
 			)}
 		>
-			<p>{t('message')}</p>
+			<div className="session-expired-dialog__content">
+				<p className="session-expired-dialog__message">{t('message')}</p>
+			</div>
 		</Dialog>
 	);
 }

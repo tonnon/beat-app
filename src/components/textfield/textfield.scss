@@ -201,7 +201,9 @@ $textfield-day-border-radius: 3px;
     font-family: $textfield-font-family !important;
     border-radius: $textfield-border-radius !important;
     padding: $textfield-datepicker-padding !important;
-    
+    display: flex;
+    align-items: center;
+
     .MuiPickersOutlinedInput-notchedOutline {
       border: 1px solid $color-border !important;
       transition: border-color $transition-duration ease, box-shadow $transition-duration ease;
@@ -303,4 +305,33 @@ $textfield-day-border-radius: 3px;
       background-color: rgba($color-primary, 0.08) !important;
     }
   }
+
+  .MuiPickersInputBase-root,
+  .MuiOutlinedInput-root {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  .MuiOutlinedInput-input,
+  .MuiInputBase-input {
+    padding: 0 0.75rem !important;
+    height: 2.75rem !important;
+    line-height: 2.75rem !important;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  .MuiPickersSectionList-section,
+  .MuiPickersSectionList-sectionContent {
+    font-family: $textfield-font-family !important;
+  }
+}
+
+.MuiPickersSectionList-section,
+.MuiPickersSectionList-sectionContent,
+.MuiPickersInputBase-section,
+.MuiPickersInputBase-sectionContent {
+  font-family: $textfield-font-family !important;
 }

@@ -350,6 +350,14 @@ export interface ConfirmEmailResponse {
   success: boolean;
 }
 
+export interface ResendConfirmationEmailPayload {
+  email: string;
+}
+
+export interface ResendConfirmationEmailResponse {
+  success: boolean;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;
@@ -412,6 +420,36 @@ export async function confirmEmail(payload: ConfirmEmailPayload): Promise<Confir
     throw mapToApiError(error);
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+export async function resendConfirmationEmail(
+  payload: ResendConfirmationEmailPayload,
+): Promise<ResendConfirmationEmailResponse> {
+  const url = resolveApiUrl(API_PATHS.resendConfirmationEmail);
+
+  try {
+    const response = await ensureSuccessfulResponse(await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload.email),
+    }));
+
+    const responseText = await response.text();
+
+    if (!responseText.trim()) {
+      return { success: true } satisfies ResendConfirmationEmailResponse;
+    }
+
+    try {
+      return JSON.parse(responseText) as ResendConfirmationEmailResponse;
+    } catch {
+      throw new ApiError('Invalid response received from resend confirmation endpoint', responseText);
+    }
+  } catch (error) {
+    throw mapToApiError(error);
   }
 }
 

@@ -5,13 +5,14 @@ import type { ReactNode } from 'react';
 
 interface PublicRouteProps {
   children: ReactNode;
+  allowWhenAuthenticated?: boolean;
 }
 
-export default function PublicRoute({ children }: PublicRouteProps) {
+export default function PublicRoute({ children, allowWhenAuthenticated = false }: PublicRouteProps) {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  if (isAuthenticated && user) {
+  if (!allowWhenAuthenticated && isAuthenticated && user) {
     const destination = getDestinationForRole(user.role);
     return <Navigate to={destination} replace />;
   }
