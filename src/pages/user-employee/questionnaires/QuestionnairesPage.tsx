@@ -820,19 +820,33 @@ export default function QuestionnairesPage() {
 
     const isLastStep = currentQuestionIndex >= totalQuestions - 1;
 
-    if (previousValue instanceof Date && value instanceof Date) {
-      if (previousValue.getTime() === value.getTime()) {
-        return previous;
-      }
-    } else if (previousValue === value) {
-      return previous;
-    }
+    return (
+      <div className="survey-dialog-actions">
+        <div className="survey-dialog-actions-button survey-dialog-actions-button-left">
+          <Button
+            variant="border"
+            onClick={handleGoBack}
+            disabled={currentQuestionIndex === 0 || isSubmittingAnswer}
+          >
+            <ArrowLeftIcon width={16} height={16} />
+            {dialogBackLabel}
+          </Button>
+        </div>
 
-    if (value === null) {
-      const next = { ...previous };
-      delete next[questionId];
-      return next;
-    }
+        <div className="survey-dialog-actions-progress" aria-live="polite">
+          {progressLabel}
+        </div>
+
+        <div className="survey-dialog-actions-button survey-dialog-actions-button-right">
+          <Button
+            variant="solid"
+            onClick={handleGoNext}
+            disabled={isSubmittingAnswer}
+          >
+            {isLastStep ? dialogCloseLabel : dialogContinueLabel}
+          </Button>
+        </div>
+      </div>
     );
   }, [
     closeSurveyDialog,
@@ -843,13 +857,11 @@ export default function QuestionnairesPage() {
     dialogRetryLabel,
     handleGoBack,
     handleRetryLoadSurvey,
+    handleGoNext,
     hasQuestions,
+    isSubmittingAnswer,
     isSurveyDialogLoading,
     isSurveyDialogOpen,
-    currentQuestion,
-    currentQuestionAnswer,
-    handleGoNext,
-    isSubmittingAnswer,
     surveyDialogError,
     totalQuestions,
   ]);
