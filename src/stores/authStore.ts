@@ -10,6 +10,7 @@ interface AuthState {
   readonly setAccessToken: (token: string | null) => void;
   readonly setRefreshToken: (token: string | null) => void;
   readonly setUser: (user: AuthenticatedUser | null) => void;
+  readonly updateUserLanguage: (language: string | null) => void;
   readonly authenticate: (session: { accessToken: string; refreshToken: string | null; user: AuthenticatedUser }) => void;
   readonly logout: () => void;
 }
@@ -29,6 +30,9 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set((state) => ({
         user,
         isAuthenticated: Boolean(state.accessToken && user),
+      })),
+      updateUserLanguage: (language) => set((state) => ({
+        user: state.user ? { ...state.user, language } : state.user,
       })),
       authenticate: ({ accessToken, refreshToken, user }) => set({
         accessToken,

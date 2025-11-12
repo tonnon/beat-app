@@ -11,6 +11,8 @@ const devBaseUrl = typeof import.meta !== 'undefined' && import.meta.env?.DEV ? 
 const API_BASE_URL = runtimeBaseUrl ?? devBaseUrl ?? DEFAULT_API_BASE_URL;
 
 const API_PATHS = {
+  avaibleLanguages: '/api/users/available-languages',
+  selectedLanguage: '/api/users/set-language-preference',
   forgotPassword: '/api/users/forgot-password',
   login: '/api/users/login',
   me: '/api/users/me',

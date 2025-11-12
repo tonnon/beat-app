@@ -336,6 +336,78 @@ export async function getAuthenticatedUser(token: string): Promise<Authenticated
   }
 }
 
+export async function fetchLanguagePreferences(token: string, signal?: AbortSignal): Promise<LanguagePreferencesResponse> {
+  const url = resolveApiUrl(API_PATHS.avaibleLanguages);
+
+  try {
+    const trimmedToken = token?.trim() ?? '';
+
+    if (!trimmedToken) {
+      throw new ApiError('Authentication token is required to fetch available languages', 'Authentication token is required to fetch available languages');
+    }
+
+    const response = await ensureSuccessfulResponse(await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${trimmedToken}`,
+      },
+      signal,
+    }));
+
+    return response.json() as Promise<LanguagePreferencesResponse>;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+
+    throw mapToApiError(error);
+  }
+}
+
+export async function updateSelectedLanguage(token: string, language: string, signal?: AbortSignal): Promise<void> {
+  const url = resolveApiUrl(API_PATHS.selectedLanguage);
+
+  try {
+    const trimmedToken = token?.trim() ?? '';
+
+    if (!trimmedToken) {
+      throw new ApiError('Authentication token is required to update language preference', 'Authentication token is required to update language preference');
+    }
+
+    const normalizedLanguage = language?.trim();
+
+    if (!normalizedLanguage) {
+      throw new ApiError('Language code is required to update language preference', 'Language code is required to update language preference');
+    }
+
+    await ensureSuccessfulResponse(await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${trimmedToken}`,
+      },
+      body: JSON.stringify(normalizedLanguage),
+      signal,
+    }));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+
+    throw mapToApiError(error);
+  }
+}
+
 export interface RegisterUserResponse {
   userId: string;
   email: string;
@@ -373,6 +445,14 @@ export interface AuthenticatedUser {
   email: string;
   role: string;
   fullName?: string;
+  language?: string | null;
+}
+
+export interface LanguagePreferencesResponse {
+  availableCodes?: ReadonlyArray<string>;
+  languages?: Record<string, unknown>;
+  defaultLanguage?: string | null;
+  selectedLanguage?: string | null;
 }
 
 export class ApiError extends Error {

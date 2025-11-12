@@ -38,7 +38,7 @@ export default function Login({
   onEmailChange,
   initialEmail = '',
 }: LoginProps) {
-  const { t } = useTranslation<'auth'>('auth');
+  const { t, i18n } = useTranslation<'auth'>('auth');
   const navigate = useNavigate();
   const { setDialogOpen } = useAuthDialog();
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -46,6 +46,7 @@ export default function Login({
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
   const setRefreshToken = useAuthStore((state) => state.setRefreshToken);
   const authenticate = useAuthStore((state) => state.authenticate);
+  const updateUserLanguage = useAuthStore((state) => state.updateUserLanguage);
 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
@@ -246,10 +247,51 @@ export default function Login({
     }
   }, [email, isSubmitting, password, setAccessToken, setRefreshToken, syncFieldErrorMessage, t, translateApiError, updateSubmitting]);
 
+  const canonicalizeApiLanguage = useCallback((language: string | null | undefined): string | null => {
+    if (!language) {
+      return null;
+    }
+
+    return language.trim().toLowerCase().replace(/_/g, '-');
+  }, []);
+
+  const resolveI18nLanguageFromApi = useCallback((language: string | null | undefined): string | null => {
+    const normalized = canonicalizeApiLanguage(language);
+
+    if (!normalized) {
+      return null;
+    }
+
+    const catalanPatterns = new Set([
+      'es-ca',
+      'es_ca',
+      'ca-ca',
+      'ca_ca',
+      'ca-es',
+      'ca_es',
+      'ca',
+    ]);
+
+    if (catalanPatterns.has(normalized)) {
+      return 'ca';
+    }
+
+    return 'es';
+  }, [canonicalizeApiLanguage]);
+
   useEffect(() => {
     if (!pendingAccessToken || !isUserLoaded || !fetchedUser) {
       return;
     }
+
+    const userLanguage = fetchedUser.language ?? null;
+    const i18nLanguage = resolveI18nLanguageFromApi(userLanguage);
+
+    if (i18nLanguage && i18n.language !== i18nLanguage) {
+      void i18n.changeLanguage(i18nLanguage);
+    }
+
+    updateUserLanguage(userLanguage);
 
     authenticate({ accessToken: pendingAccessToken, refreshToken: refreshToken ?? null, user: fetchedUser });
     setPendingAccessToken(null);
@@ -269,7 +311,20 @@ export default function Login({
     }
 
     navigate('/', { replace: true });
-  }, [authenticate, fetchedUser, isUserLoaded, navigate, onEmailChange, pendingAccessToken, refreshToken, setDialogOpen, updateSubmitting]);
+  }, [
+    authenticate,
+    fetchedUser,
+    i18n,
+    isUserLoaded,
+    navigate,
+    onEmailChange,
+    pendingAccessToken,
+    refreshToken,
+    resolveI18nLanguageFromApi,
+    setDialogOpen,
+    updateSubmitting,
+    updateUserLanguage,
+  ]);
 
   useEffect(() => {
     if (!pendingAccessToken || !isUserError) {

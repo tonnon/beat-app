@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useLocation, useNavigate } from 'react-router-dom';
 import Dialog from '@/components/dialog/Dialog';
 import ProgressLinear from '@/components/progress/progress-linear/ProgressLinear';
 import { useAuthDialog } from '@/context/auth/useAuthDialog';
@@ -14,25 +13,15 @@ import TermsOfUse, { type TermsOfUseSection } from './terms-of-use/TermsOfUse';
 import PrivacyPolicy from './privacy-policy/PrivacyPolicy';
 import { InformedConsentFooter } from './informed-consent/InformedConsent';
 import ConfirmEmail from './confirm-email/ConfirmEmail';
-import ConfirmEmailSuccess from './confirm-email/ConfirmEmailSuccess';
 import InformedConsentText from './informed-consent/informed-consent-text/InformedConsentText';
 import SingupSuccess from './singup-success/SingupSuccess';
-import { confirmEmail, resendConfirmationEmail, type ConfirmEmailPayload, type ResendConfirmationEmailPayload, ApiError } from '@/services/auth/authService';
+import ConfirmEmailSuccess from './confirm-email/ConfirmEmailSuccess';
+import { confirmEmail, type ConfirmEmailPayload, ApiError } from '@/services/auth/authService';
 import type { RegisterUserPayload } from '@/services/auth/authService';
 import { useConsentProgress } from '@/hooks/useConsentProgress';
 import { type AuthView } from './constants';
 import './auth.scss';
-
-const PENDING_SIGNUP_EMAIL_STORAGE_KEY = 'beat-app:pending-signup-email';
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const getStoredSignupEmail = () => {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
-  return window.localStorage.getItem(PENDING_SIGNUP_EMAIL_STORAGE_KEY) ?? '';
-};
+import { useAuthDialogFlowStore } from '@/stores/authDialogFlowStore';
 
 type TermsOfUseTranslation = {
   readonly title: string;
@@ -45,44 +34,6 @@ type ConfirmEmailErrorKey = 'confirmEmail.errors.invalidEmailOrCode' | 'errors.g
 export default function Auth() {
   const { t } = useTranslation<'auth'>('auth');
   const { isOpen, setDialogOpen } = useAuthDialog();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const normalizedPathname = useMemo(() => {
-    const trimmed = location.pathname.replace(/\/+/g, '/');
-    return trimmed.endsWith('/') && trimmed !== '/' ? trimmed.slice(0, -1) : trimmed;
-  }, [location.pathname]);
-
-  const pathSegments = useMemo(() => normalizedPathname.split('/').filter(Boolean), [normalizedPathname]);
-
-  const isConfirmTokenEmailRoute = useMemo(() => {
-    if (pathSegments.length === 0) {
-      return false;
-    }
-
-    const lastSegment = pathSegments[pathSegments.length - 1].toLowerCase();
-    return lastSegment === 'confirm-token-email';
-  }, [pathSegments]);
-
-  const confirmTokenRouteBasePath = useMemo(() => {
-    if (!isConfirmTokenEmailRoute) {
-      return null;
-    }
-
-    if (pathSegments.length <= 1) {
-      return '/';
-    }
-
-    return `/${pathSegments.slice(0, -1).join('/')}`;
-  }, [isConfirmTokenEmailRoute, pathSegments]);
-
-  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-
-  const confirmEmailToken = useMemo(() => {
-    const value = searchParams.get('token');
-    return value ? value.trim() : null;
-  }, [searchParams]);
-
 
   const termsOfUseTranslation = t('termsOfUse', { returnObjects: true }) as TermsOfUseTranslation;
 
@@ -92,11 +43,11 @@ export default function Auth() {
   }) as { title: string };
 
   const [view, setView] = useState<AuthView>('login');
-  const [loginEmail, setLoginEmail] = useState(getStoredSignupEmail);
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginSubmitting, setLoginSubmitting] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
-  const [signupEmail, setSignupEmail] = useState(getStoredSignupEmail);
+  const [signupEmail, setSignupEmail] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
@@ -106,7 +57,6 @@ export default function Auth() {
   const [signupTermsAccepted, setSignupTermsAccepted] = useState(false);
   const [signupPrivacyAccepted, setSignupPrivacyAccepted] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
   const [registrationPayload, setRegistrationPayload] = useState<Pick<RegisterUserPayload, 'email' | 'codeCompany' | 'password'> | null>(null);
   const [consentFullName, setConsentFullName] = useState('');
   const [consentDni, setConsentDni] = useState('');
@@ -116,48 +66,12 @@ export default function Auth() {
     terms: false,
     privacy: false,
   });
-  const confirmEmailRouteProcessedRef = useRef<string | null>(null);
-  const autoConfirmSignatureRef = useRef<string | null>(null);
   const formId = 'auth-dialog-form';
   const ICON_SIZE = 18;
+  const trimmedUserId = useMemo(() => (userId ?? '').trim(), [userId]);
+
   const [confirmEmailErrorKey, setConfirmEmailErrorKey] = useState<ConfirmEmailErrorKey | null>(null);
   const [confirmEmailErrorMessage, setConfirmEmailErrorMessage] = useState<string | null>(null);
-  const [confirmEmailSuccessMessage, setConfirmEmailSuccessMessage] = useState<string | null>(null);
-  const [hasConfirmEmailError, setHasConfirmEmailError] = useState(false);
-
-  const effectiveConfirmationToken = useMemo(() => {
-    if (hasConfirmEmailError && confirmationToken !== null) {
-      return confirmationToken;
-    }
-
-    if (confirmEmailToken) {
-      return confirmEmailToken;
-    }
-
-    return confirmationToken ?? '';
-  }, [confirmEmailToken, confirmationToken, hasConfirmEmailError]);
-
-  const trimmedConfirmationToken = useMemo(() => effectiveConfirmationToken.trim(), [effectiveConfirmationToken]);
-  const trimmedSignupEmail = useMemo(() => signupEmail.trim(), [signupEmail]);
-  const isSignupEmailValid = useMemo(() => EMAIL_REGEX.test(trimmedSignupEmail), [trimmedSignupEmail]);
-
-  const isTokenReadOnly = Boolean(confirmEmailToken) && !hasConfirmEmailError;
-  const minimumConfirmationTokenLength = useMemo(() => (confirmEmailToken && confirmEmailToken.length > 0 ? confirmEmailToken.length : 6), [confirmEmailToken]);
-  const shouldRequestEmailEntry = !isSignupEmailValid || hasConfirmEmailError;
-  const shouldRequestTokenEntry = hasConfirmEmailError;
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    if (trimmedSignupEmail) {
-      window.localStorage.setItem(PENDING_SIGNUP_EMAIL_STORAGE_KEY, trimmedSignupEmail);
-      return;
-    }
-
-    window.localStorage.removeItem(PENDING_SIGNUP_EMAIL_STORAGE_KEY);
-  }, [trimmedSignupEmail]);
 
   const clearSignupErrors = useCallback(() => {
     setSignupError(null);
@@ -180,14 +94,11 @@ export default function Auth() {
     setConsentFullName('');
     setConsentDni('');
     setConsentBirthDate(null);
-    setConfirmationToken(null);
   }, [clearSignupErrors]);
 
   const clearConfirmEmailError = useCallback(() => {
     setConfirmEmailErrorKey(null);
     setConfirmEmailErrorMessage(null);
-    setConfirmEmailSuccessMessage(null);
-    setHasConfirmEmailError(false);
   }, []);
 
   const detectConfirmEmailErrorKey = useCallback((message: string): ConfirmEmailErrorKey | null => {
@@ -217,26 +128,17 @@ export default function Auth() {
       if (detectedKey) {
         setConfirmEmailErrorKey(detectedKey);
         setConfirmEmailErrorMessage(null);
-        setConfirmEmailSuccessMessage(null);
-        setHasConfirmEmailError(true);
-        autoConfirmSignatureRef.current = null;
         return;
       }
 
       setConfirmEmailErrorKey(null);
       setConfirmEmailErrorMessage(rawMessage);
-      setConfirmEmailSuccessMessage(null);
-      setHasConfirmEmailError(true);
-      autoConfirmSignatureRef.current = null;
       return;
     }
 
     if (fallbackKey) {
       setConfirmEmailErrorKey(fallbackKey);
       setConfirmEmailErrorMessage(null);
-      setConfirmEmailSuccessMessage(null);
-      setHasConfirmEmailError(true);
-      autoConfirmSignatureRef.current = null;
       return;
     }
 
@@ -247,41 +149,9 @@ export default function Auth() {
     mutationFn: confirmEmail,
     onSuccess: () => {
       clearConfirmEmailError();
-      setUserId(null);
-      setConfirmationToken(null);
-      if (isConfirmTokenEmailRoute) {
-        const nextPath = confirmTokenRouteBasePath ?? '/';
-        navigate(nextPath, { replace: true });
-      }
       setView('confirmEmailSuccess');
     },
     onError: (error: unknown) => {
-      if (error instanceof ApiError) {
-        processConfirmEmailError(error.originalMessage);
-        return;
-      }
-
-      if (error instanceof Error) {
-        processConfirmEmailError(error.message);
-        return;
-      }
-
-      processConfirmEmailError(null, 'errors.generic');
-    },
-  });
-
-  const { reset: resetConfirmEmailMutation } = confirmEmailMutation;
-
-  const resendConfirmationEmailMutation = useMutation({
-    mutationFn: (payload: ResendConfirmationEmailPayload) => resendConfirmationEmail(payload),
-    onSuccess: () => {
-      setConfirmEmailSuccessMessage(t('confirmEmail.resend.success'));
-      setConfirmEmailErrorKey(null);
-      setConfirmEmailErrorMessage(null);
-    },
-    onError: (error: unknown) => {
-      setConfirmEmailSuccessMessage(null);
-
       if (error instanceof ApiError) {
         processConfirmEmailError(error.originalMessage);
         return;
@@ -307,36 +177,13 @@ export default function Auth() {
     readingCompleted,
   } = useConsentProgress({ view, dialogBodyRef });
 
-  useEffect(() => {
-    if (!isConfirmTokenEmailRoute) {
-      confirmEmailRouteProcessedRef.current = null;
-      autoConfirmSignatureRef.current = null;
-      setConfirmationToken(null);
-      return;
-    }
+  const handleLoginEmailChange = useCallback((nextEmail: string) => {
+    setLoginEmail(nextEmail);
+  }, []);
 
-    const normalizedPathForSignature = normalizedPathname || '/';
-    const normalizedToken = confirmEmailToken ?? '';
-    const signature = `${normalizedPathForSignature}?${normalizedToken}`;
-
-    if (confirmEmailRouteProcessedRef.current === signature) {
-      return;
-    }
-
-    confirmEmailRouteProcessedRef.current = signature;
-
-    setDialogOpen(true);
-    setView('confirmEmail');
-    resetConfirmEmailMutation();
-    clearConfirmEmailError();
-  }, [
-    clearConfirmEmailError,
-    confirmEmailToken,
-    isConfirmTokenEmailRoute,
-    normalizedPathname,
-    resetConfirmEmailMutation,
-    setDialogOpen,
-  ]);
+  const handleLoginSubmittingChange = useCallback((submitting: boolean) => {
+    setLoginSubmitting(submitting);
+  }, []);
 
   const handleNavigateToForgotPassword = useCallback((emailFromLogin: string) => {
     setForgotEmail(emailFromLogin);
@@ -349,14 +196,6 @@ export default function Auth() {
     resetSignupState();
     setView('signup');
   }, [loginEmail, resetSignupState]);
-
-  const handleLoginEmailChange = useCallback((nextEmail: string) => {
-    setLoginEmail(nextEmail);
-  }, []);
-
-  const handleLoginSubmittingChange = useCallback((submitting: boolean) => {
-    setLoginSubmitting(submitting);
-  }, []);
 
   const resetForgotState = useCallback(() => {
     setForgotSubmitting(false);
@@ -402,106 +241,61 @@ export default function Auth() {
   const handleConsentConfirmed = useCallback(() => {
     setView('confirmEmail');
     clearConfirmEmailError();
-    resetConfirmEmailMutation();
-    setConfirmationToken(null);
-  }, [clearConfirmEmailError, resetConfirmEmailMutation]);
+    confirmEmailMutation.reset();
+  }, [clearConfirmEmailError, confirmEmailMutation]);
 
-  const handleConfirmEmailEmailChange = useCallback((nextEmail: string) => {
-    setSignupEmail(nextEmail);
-    setLoginEmail(nextEmail);
-    clearConfirmEmailError();
-  }, [clearConfirmEmailError, setLoginEmail, setSignupEmail]);
-
-  const handleConfirmEmailTokenChange = useCallback((nextToken: string) => {
-    setConfirmationToken(nextToken);
+  const handleConfirmEmailUserIdChange = useCallback((id: string) => {
+    setUserId(id);
     clearConfirmEmailError();
   }, [clearConfirmEmailError]);
 
-  const handleConfirmEmailResend = useCallback(() => {
-    const trimmedEmail = signupEmail.trim();
-
-    if (!trimmedEmail) {
-      setConfirmEmailErrorKey(null);
-      setConfirmEmailErrorMessage(t('confirmEmail.resend.missingEmail'));
-      setConfirmEmailSuccessMessage(null);
-      return;
-    }
-
-    if (resendConfirmationEmailMutation.isPending) {
-      return;
-    }
-
-    setConfirmEmailSuccessMessage(null);
-    resendConfirmationEmailMutation.mutate({ email: trimmedEmail });
-  }, [resendConfirmationEmailMutation, signupEmail, t]);
-
-  const handleConfirmEmailSubmit = useCallback(() => {
-    const trimmedEmail = signupEmail.trim();
-
-    if (!trimmedConfirmationToken || !trimmedEmail) {
-      return;
-    }
-
-    const payload: ConfirmEmailPayload = {
-      email: trimmedEmail,
-      code: trimmedConfirmationToken,
+  const handleConfirmEmailSubmit = useCallback((payload?: ConfirmEmailPayload) => {
+    const nextPayload = payload ?? {
+      email: signupEmail.trim(),
+      code: trimmedUserId,
     };
 
+    if (!nextPayload.email || !nextPayload.code) {
+      return;
+    }
+
     clearConfirmEmailError();
-    confirmEmailMutation.mutate(payload);
-  }, [clearConfirmEmailError, confirmEmailMutation, signupEmail, trimmedConfirmationToken]);
-
-  useEffect(() => {
-    if (view !== 'confirmEmail') {
-      if (view !== 'confirmEmailSuccess') {
-        autoConfirmSignatureRef.current = null;
-      }
-      return;
-    }
-
-    if (!confirmEmailToken) {
-      autoConfirmSignatureRef.current = null;
-      return;
-    }
-
-    if (hasConfirmEmailError) {
-      return;
-    }
-
-    if (!trimmedSignupEmail || !trimmedConfirmationToken) {
-      return;
-    }
-
-    if (trimmedConfirmationToken.length < minimumConfirmationTokenLength) {
-      return;
-    }
-
-    if (confirmEmailMutation.isPending) {
-      return;
-    }
-
-    const signature = `${trimmedSignupEmail}:${trimmedConfirmationToken}`;
-
-    if (autoConfirmSignatureRef.current === signature) {
-      return;
-    }
-
-    autoConfirmSignatureRef.current = signature;
-    handleConfirmEmailSubmit();
-  }, [
-    confirmEmailMutation.isPending,
-    confirmEmailToken,
-    handleConfirmEmailSubmit,
-    hasConfirmEmailError,
-    minimumConfirmationTokenLength,
-    trimmedConfirmationToken,
-    trimmedSignupEmail,
-    view,
-  ]);
+    confirmEmailMutation.mutate(nextPayload);
+  }, [clearConfirmEmailError, confirmEmailMutation, signupEmail, trimmedUserId]);
 
   const handleShowConsentText = useCallback(() => {
     setView('informedConsentText');
   }, []);
+
+  const confirmEmailParams = useAuthDialogFlowStore((state) => state.confirmEmailParams);
+  const dialogTargetView = useAuthDialogFlowStore((state) => state.targetView);
+  const consumeConfirmEmailFlow = useAuthDialogFlowStore((state) => state.consumeConfirmEmailFlow);
+
+  useEffect(() => {
+    if (!confirmEmailParams) {
+      return;
+    }
+
+    const payload: ConfirmEmailPayload = {
+      email: confirmEmailParams.email,
+      code: confirmEmailParams.code,
+    };
+
+    setSignupEmail(payload.email);
+    setUserId(payload.code);
+
+    if (confirmEmailParams.autoConfirm) {
+      setView('confirmEmail');
+      handleConfirmEmailSubmit(payload);
+      consumeConfirmEmailFlow();
+    }
+  }, [confirmEmailParams, consumeConfirmEmailFlow, handleConfirmEmailSubmit]);
+
+  useEffect(() => {
+    if (dialogTargetView && view !== dialogTargetView) {
+      setView(dialogTargetView);
+    }
+  }, [dialogTargetView, setView, view]);
 
   const handleBackFromConsentText = useCallback(() => {
     setView('informedConsent');
@@ -736,19 +530,6 @@ export default function Auth() {
       case 'confirmEmail':
         return null;
 
-      case 'confirmEmailSuccess':
-        return renderActionsWrapper(
-          <Button
-            variant="solid"
-            size="md"
-            text={t('confirmEmail.success.cta')}
-            className="dialog-actions-primary"
-            type="button"
-            onClick={handleBackToLogin}
-          />,
-          { contentAlign: 'end', buttonsAlign: 'end' }
-        );
-
       case 'informedConsentText':
         return renderActionsWrapper(
           <Button
@@ -767,11 +548,12 @@ export default function Auth() {
         );
 
       case 'signupSuccess':
+      case 'confirmEmailSuccess':
         return renderActionsWrapper(
           <Button
             variant="solid"
             size="md"
-            text={t('signupSuccess.cta')}
+            text={view === 'confirmEmailSuccess' ? t('confirmEmail.success.cta') : t('signupSuccess.cta')}
             className="dialog-actions-primary"
             type="button"
             onClick={handleBackToLogin}
@@ -811,10 +593,6 @@ export default function Auth() {
         );
     }
   }, [
-    consentBirthDate,
-    consentDni,
-    consentFullName,
-    consentTextCompleted,
     forgotSubmitting,
     formId,
     handleBackFromConsentText,
@@ -825,19 +603,23 @@ export default function Auth() {
     handleConsentConfirmed,
     handleRegisterClick,
     handleShowConsentText,
-    handleUserRegistered,
     loginSubmitting,
-    privacyDocumentCompleted,
-    readingCompleted,
-    registrationPayload,
     renderActionsWrapper,
+    privacyDocumentCompleted,
+    consentBirthDate,
+    consentDni,
+    consentFullName,
+  consentTextCompleted,
+    readingCompleted,
     signupPrivacyAccepted,
     signupSubmitting,
     signupTermsAccepted,
-    t,
     termsDocumentCompleted,
+    t,
     userId,
     view,
+    registrationPayload,
+    handleUserRegistered,
   ]);
 
   const dialogTitle = useMemo(() => {
@@ -949,24 +731,18 @@ export default function Auth() {
         ) : view === 'confirmEmail' ? (
           <ConfirmEmail
             email={signupEmail}
-            token={effectiveConfirmationToken}
-            onEmailChange={handleConfirmEmailEmailChange}
-            onTokenChange={handleConfirmEmailTokenChange}
-            onResendRequest={handleConfirmEmailResend}
-            shouldRequestEmail={shouldRequestEmailEntry}
-            shouldRequestToken={shouldRequestTokenEntry}
-            emailReadOnly={!shouldRequestEmailEntry}
-            tokenReadOnly={isTokenReadOnly}
+            token={userId ?? ''}
+            onEmailChange={handleSignupEmailChange}
+            onTokenChange={handleConfirmEmailUserIdChange}
+            onConfirm={handleConfirmEmailSubmit}
             errorTranslationKey={confirmEmailErrorKey}
             errorMessage={confirmEmailErrorMessage}
-            successMessage={confirmEmailSuccessMessage}
-            isResendPending={resendConfirmationEmailMutation.isPending}
             isSubmitting={confirmEmailMutation.isPending}
           />
-        ) : view === 'confirmEmailSuccess' ? (
-          <ConfirmEmailSuccess />
         ) : view === 'informedConsentText' ? (
           <InformedConsentText />
+        ) : view === 'confirmEmailSuccess' ? (
+          <ConfirmEmailSuccess />
         ) : view === 'signupSuccess' ? (
           <SingupSuccess />
         ) : view === 'forgotPassword' ? (

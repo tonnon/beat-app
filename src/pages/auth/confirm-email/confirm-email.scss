@@ -5,13 +5,12 @@ $confirm-email-subtitle-font-size: 1.125rem;
 $confirm-email-subtitle-color: var(--color-neutral-600);
 $confirm-email-message-font-size: 1rem;
 $confirm-email-message-color: var(--color-neutral-700);
-$confirm-email-email-width: 100%;
+$confirm-email-user-id-width: 100%;
 
 .confirm-email {
   display: flex;
   flex-direction: column;
   gap: $confirm-email-gap;
-  padding-bottom: 4px;
 }
 
 .confirm-email-title {
@@ -33,6 +32,10 @@ $confirm-email-email-width: 100%;
   color: $confirm-email-message-color;
 }
 
-.confirm-email-email-field {
-  width: $confirm-email-email-width;
+.confirm-email-user-id-field {
+  width: $confirm-email-user-id-width;
+}
+
+.confirm-email-resend-link {
+  color: inherit;
 }

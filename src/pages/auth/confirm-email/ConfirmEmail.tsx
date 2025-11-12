@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/button/Button';
 import Link from '@/components/link/Link';
 import Textfield from '@/components/textfield/Textfield';
 import Warning from '@/components/warning/Warning';
@@ -16,8 +17,7 @@ type ConfirmEmailProps = {
   readonly onResendRequest?: () => void;
   readonly onEmailChange?: (email: string) => void;
   readonly onTokenChange?: (token: string) => void;
-  readonly shouldRequestEmail?: boolean;
-  readonly shouldRequestToken?: boolean;
+  readonly onConfirm?: () => void;
   readonly emailReadOnly?: boolean;
   readonly tokenReadOnly?: boolean;
   readonly errorTranslationKey?: ConfirmEmailErrorTranslationKey | null;
@@ -33,10 +33,9 @@ export default function ConfirmEmail({
   onResendRequest,
   onEmailChange,
   onTokenChange,
-  shouldRequestEmail = false,
-  shouldRequestToken = false,
+  onConfirm,
   emailReadOnly = false,
-  tokenReadOnly = false,
+  tokenReadOnly = true,
   errorTranslationKey,
   errorMessage,
   successMessage,
@@ -70,9 +69,10 @@ export default function ConfirmEmail({
     }
 
     const trimmedEmail = email?.trim() ?? '';
+    const resendMessages = confirmEmail.resend;
 
     if (!trimmedEmail) {
-      setLocalErrorMessage(t('confirmEmail.resend.missingEmail'));
+      setLocalErrorMessage(resendMessages?.missingEmail ?? t('errors.generic'));
       setLocalSuccessMessage(null);
       return;
     }
@@ -83,7 +83,7 @@ export default function ConfirmEmail({
 
     try {
       await resendConfirmationEmail({ email: trimmedEmail });
-      setLocalSuccessMessage(t('confirmEmail.resend.success'));
+      setLocalSuccessMessage(resendMessages?.success ?? t('errors.generic'));
     } catch (error) {
       if (error instanceof ApiError) {
         setLocalErrorMessage(error.originalMessage);
@@ -109,10 +109,21 @@ export default function ConfirmEmail({
     onTokenChange?.(event.target.value);
   };
 
-  const shouldRenderEmailField = shouldRequestEmail || (!emailReadOnly && Boolean(email));
-  const shouldRenderTokenField = shouldRequestToken || Boolean(token);
+  const shouldDisplayRecoveryFields = Boolean(translatedError);
   const emailValue = email ?? '';
   const tokenValue = token ?? '';
+  const shouldRenderEmailField = shouldDisplayRecoveryFields;
+  const shouldRenderTokenField = shouldDisplayRecoveryFields;
+  const tokenFieldIsReadOnly = shouldDisplayRecoveryFields ? false : tokenReadOnly;
+  const shouldRenderConfirmButton = shouldDisplayRecoveryFields && Boolean(onConfirm);
+
+  const handleConfirmClick = () => {
+    if (!onConfirm || isSubmitting) {
+      return;
+    }
+
+    onConfirm();
+  };
 
   return (
     <div className="confirm-email">
@@ -121,8 +132,7 @@ export default function ConfirmEmail({
         <Link
           to="#"
           label={confirmEmail.linkLabel}
-          variant="subtle"
-          className="confirm-email-resend-link"
+          variant="important"
           onClick={handleResendClick}
         />
         {confirmEmail.bodySuffix}
@@ -152,10 +162,22 @@ export default function ConfirmEmail({
           onChange={handleTokenInputChange}
           required
           disabled={isSubmitting}
-          readOnly={tokenReadOnly}
-          aria-readonly={tokenReadOnly}
-          description={tokenReadOnly ? confirmEmail.readonlyHint?.token : undefined}
+          readOnly={tokenFieldIsReadOnly}
+          aria-readonly={tokenFieldIsReadOnly}
+          description={tokenFieldIsReadOnly ? confirmEmail.readonlyHint?.token : undefined}
           wrapperClassName="confirm-email-email-field"
+        />
+      ) : null}
+      {shouldRenderConfirmButton ? (
+        <Button
+          variant="solid"
+          size="md"
+          text={confirmEmail.cta.confirm}
+          className="confirm-email-confirm-button"
+          type="button"
+          onClick={handleConfirmClick}
+          loading={isSubmitting}
+          disabled={isSubmitting}
         />
       ) : null}
       {translatedError ? (

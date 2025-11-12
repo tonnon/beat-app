@@ -1,6 +1,7 @@
 import Skeleton from '@/components/skeleton/Skeleton';
 import Textfield from '@/components/textfield/Textfield';
 import type { SurveyQuestion } from '@/services/cardSurveys/cardSurveysService';
+import { normalizeTranslationText } from '@/hooks/useNormalizedTranslation';
 import { normalizeQuestionType, resolveQuestionTitle, resolveQuestionTranslation } from './questionUtils';
 import './questions.scss';
 
@@ -18,7 +19,7 @@ export default function SurveyQuestionStep({
   onAnswerChange,
 }: SurveyQuestionStepProps) {
   const translation = resolveQuestionTranslation(question, language);
-  const pretitle = translation?.pretitle?.trim() ?? '';
+  const pretitle = normalizeTranslationText(translation?.pretitle);
   const helpText = translation?.helpText?.trim() ?? '';
   const questionTitle = resolveQuestionTitle(question, language);
   const isDateQuestion = normalizeQuestionType(question.type) === 'date';

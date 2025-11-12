@@ -1,23 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import Dialog from '@/components/dialog/Dialog';
 import Button from '@/components/button/Button';
-import { API_PATHS } from '@/config/api';
+import { useApiFetchInterceptors } from '@/hooks/useApiFetchInterceptors';
 import { useAuthStore } from '@/stores/authStore';
 import './refresh-token.scss';
-
-const SESSION_EXPIRED_STATUS = 401;
-
-function isLoginRequest(requestInfo: RequestInfo | URL): boolean {
-	if (requestInfo instanceof Request) {
-		return requestInfo.url.includes(API_PATHS.login);
-	}
-
-	const candidate = requestInfo instanceof URL ? requestInfo.toString() : String(requestInfo);
-	return candidate.includes(API_PATHS.login);
-}
 
 export default function RefreshToken() {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,34 +34,11 @@ export default function RefreshToken() {
 		handleSessionEnded();
 	}, [handleSessionEnded]);
 
-	useEffect(() => {
-		if (typeof globalThis.fetch !== 'function') {
-			return;
-		}
-
-		const originalFetch = globalThis.fetch.bind(globalThis);
-
-		const interceptedFetch: typeof globalThis.fetch = async (...args) => {
-			const response = await originalFetch(...args);
-
-			if (
-				response.status === SESSION_EXPIRED_STATUS &&
-				!isLoginRequest(args[0]) &&
-				useAuthStore.getState().accessToken
-			) {
-				setIsDialogOpen((previous) => (previous ? previous : true));
-			}
-
-			return response;
-		};
-
-		Object.assign(interceptedFetch, originalFetch);
-		globalThis.fetch = interceptedFetch;
-
-		return () => {
-			globalThis.fetch = originalFetch;
-		};
-	}, []);
+	useApiFetchInterceptors({
+		onUnauthorized: () => {
+			setIsDialogOpen((previous) => (previous ? previous : true));
+		},
+	});
 
 	return (
 		<Dialog

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '@/layout/page-layout/page-header/PageHeader';
+import Skeleton from '@/components/skeleton/Skeleton';
 import Dropdown from '@/components/dropdown/Dropdown';
 import type { DropdownItem } from '@/components/dropdown/Dropdown';
 import StatusBadge from '@/components/status-badge/StatusBadge';
@@ -13,6 +14,7 @@ import Button from '@/components/button/Button';
 import Warning from '@/components/warning/Warning';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
 import SurveyQuestionStep, { SurveyQuestionSkeleton } from './questions/Questions';
+import useNormalizedTranslation from '@/hooks/useNormalizedTranslation';
 import {
   fetchCardSurveys,
   fetchSurveyWithQuestions,
@@ -100,14 +102,30 @@ const normalizeLanguage = (language: string | null | undefined): string | null =
     return null;
   }
 
-  return language.trim().toLowerCase();
+  return language.trim().replace(/_/g, '-').toLowerCase();
 };
 
-const resolveSurveyTitle = (survey: CardSurvey, language: string): string => {
+const matchesLanguage = (candidate: string | null | undefined, language: string): boolean => {
+  const normalizedCandidate = normalizeLanguage(candidate);
+
+  if (!normalizedCandidate) {
+    return false;
+  }
+
+  if (normalizedCandidate.startsWith(language)) {
+    return true;
+  }
+
+  return normalizedCandidate.split('-').some((part) => part === language);
+};
+
+type NormalizeTranslationFn = (value: string | null | undefined) => string;
+
+const resolveSurveyTitle = (survey: CardSurvey, language: string, normalizeText: NormalizeTranslationFn): string => {
   const translations = survey.translations ?? [];
 
   if (!translations.length) {
-    return survey.code;
+    return normalizeText(survey.code);
   }
 
   const normalizedLanguage = normalizeLanguage(language);
@@ -116,26 +134,26 @@ const resolveSurveyTitle = (survey: CardSurvey, language: string): string => {
   const candidates = translations.filter((translation) => isNonEmptyTranslationTitle(translation.title));
 
   if (!candidates.length) {
-    return formatTitle(survey.code);
+    return normalizeText(survey.code);
   }
 
   if (normalizedLanguage) {
     const exactMatch = candidates.find((translation) => normalizeLanguage(translation.language) === normalizedLanguage);
 
     if (exactMatch) {
-      return formatTitle(exactMatch.title!);
+      return normalizeText(exactMatch.title);
     }
   }
 
   if (languageWithoutRegion) {
-    const partialMatch = candidates.find((translation) => normalizeLanguage(translation.language)?.startsWith(languageWithoutRegion));
+    const partialMatch = candidates.find((translation) => matchesLanguage(translation.language, languageWithoutRegion));
 
     if (partialMatch) {
-      return formatTitle(partialMatch.title!);
+      return normalizeText(partialMatch.title);
     }
   }
 
-  return formatTitle(candidates[0].title!);
+  return normalizeText(candidates[0].title);
 };
 
 const isNonEmptyTranslationTitle = (title: string | null | undefined): title is string =>
@@ -143,24 +161,11 @@ const isNonEmptyTranslationTitle = (title: string | null | undefined): title is 
 
 const DEFAULT_FETCH_ERROR_MESSAGE = 'Unable to load questionnaires.';
 
-const formatTitle = (rawTitle: string): string => {
-  const trimmed = rawTitle.trim();
-
-  if (!trimmed) {
-    return rawTitle;
-  }
-
-  return trimmed
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
-
 const resolveSurveyDialogTitle = (
   code: string,
   translationsInput: ReadonlyArray<CardSurveyTranslation> | null | undefined,
   language: string,
+  normalizeText: NormalizeTranslationFn,
 ): string => {
   if (!code) {
     return '';
@@ -169,7 +174,7 @@ const resolveSurveyDialogTitle = (
   const translations = translationsInput ?? [];
 
   if (!translations.length) {
-    return formatTitle(code);
+    return normalizeText(code);
   }
 
   const normalizedLanguage = normalizeLanguage(language);
@@ -177,27 +182,27 @@ const resolveSurveyDialogTitle = (
   const candidates = translations.filter((translation) => isNonEmptyTranslationTitle(translation.title));
 
   if (!candidates.length) {
-    return formatTitle(code);
+    return normalizeText(code);
   }
 
   if (normalizedLanguage) {
     const exactMatch = candidates.find((translation) => normalizeLanguage(translation.language) === normalizedLanguage);
 
     if (exactMatch?.title) {
-      return formatTitle(exactMatch.title);
+      return normalizeText(exactMatch.title);
     }
   }
 
   if (languageWithoutRegion) {
-    const partialMatch = candidates.find((translation) => normalizeLanguage(translation.language)?.startsWith(languageWithoutRegion));
+    const partialMatch = candidates.find((translation) => matchesLanguage(translation.language, languageWithoutRegion));
 
     if (partialMatch?.title) {
-      return formatTitle(partialMatch.title);
+      return normalizeText(partialMatch.title);
     }
   }
 
   const fallbackTitle = candidates[0]?.title;
-  return fallbackTitle ? formatTitle(fallbackTitle) : formatTitle(code);
+  return fallbackTitle ? normalizeText(fallbackTitle) : normalizeText(code);
 };
 
 const sortSurveyQuestions = (questionsInput: ReadonlyArray<SurveyQuestion> | null | undefined): SurveyQuestion[] => {
@@ -218,7 +223,9 @@ const sortSurveyQuestions = (questionsInput: ReadonlyArray<SurveyQuestion> | nul
 };
 
 export default function QuestionnairesPage() {
-  const { t, i18n } = useTranslation<'questionnaires'>('questionnaires');
+  const { t, i18n } = useTranslation(['questionnaires', 'common']);
+  const normalizeTranslation = useNormalizedTranslation();
+  const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
   const accessToken = useAuthStore((state) => state.accessToken);
   const lastFetchedTokenRef = useRef<string | null>(null);
   const hasSkippedStrictModeEffectRef = useRef(false);
@@ -232,6 +239,7 @@ export default function QuestionnairesPage() {
   const [surveyDialogError, setSurveyDialogError] = useState<string | null>(null);
   const [activeSurveyId, setActiveSurveyId] = useState<string | null>(null);
   const [activeSurveyData, setActiveSurveyData] = useState<SurveyWithQuestionAnswers | null>(null);
+  const [roundName, setRoundName] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [activeSurveyTitle, setActiveSurveyTitle] = useState('');
   const [activeSurveyQuestions, setActiveSurveyQuestions] = useState<ReadonlyArray<SurveyQuestion>>([]);
@@ -241,6 +249,7 @@ export default function QuestionnairesPage() {
   const [submitAnswerError, setSubmitAnswerError] = useState<string | null>(null);
   const [userSurveyRoundId, setUserSurveyRoundId] = useState<number | null>(null);
   const surveyDialogAbortControllerRef = useRef<AbortController | null>(null);
+  const [tabValue, setTabValue] = useState<string>('t0');
 
   const clearSurveyDialogRequest = useCallback(() => {
     const controller = surveyDialogAbortControllerRef.current;
@@ -412,7 +421,7 @@ export default function QuestionnairesPage() {
 
         setActiveSurveyData(data);
         setActiveSurveyQuestions(sortedQuestions);
-        setActiveSurveyTitle(resolveSurveyDialogTitle(data.code, data.translations, i18n.language));
+        setActiveSurveyTitle(resolveSurveyDialogTitle(data.code, data.translations, currentLanguage, normalizeTranslation));
         setQuestionAnswers(nextQuestionAnswers);
         setCurrentQuestionIndex(nextQuestionIndex);
       })
@@ -436,7 +445,7 @@ export default function QuestionnairesPage() {
           surveyDialogAbortControllerRef.current = null;
         }
       });
-  }, [accessToken, clearSurveyDialogRequest, clearSubmitAnswerRequest, i18n.language, t]);
+  }, [accessToken, clearSurveyDialogRequest, clearSubmitAnswerRequest, currentLanguage, normalizeTranslation, t]);
 
   const closeSurveyDialog = useCallback(() => {
     clearSurveyDialogRequest();
@@ -475,11 +484,11 @@ export default function QuestionnairesPage() {
     clearSubmitAnswerRequest();
 
     if (survey) {
-      setActiveSurveyTitle(resolveSurveyTitle(survey, i18n.language));
+      setActiveSurveyTitle(resolveSurveyTitle(survey, currentLanguage, normalizeTranslation));
     }
 
     loadSurveyQuestions(surveyId);
-  }, [clearSubmitAnswerRequest, i18n.language, loadSurveyQuestions, surveys]);
+  }, [clearSubmitAnswerRequest, currentLanguage, loadSurveyQuestions, normalizeTranslation, surveys]);
 
   useEffect(() => () => {
     clearSurveyDialogRequest();
@@ -505,6 +514,7 @@ export default function QuestionnairesPage() {
       setSurveys([]);
       setFetchError(null);
       setUserSurveyRoundId(null);
+      setRoundName(null);
       lastFetchedTokenRef.current = null;
       return () => {
         isActive = false;
@@ -530,10 +540,19 @@ export default function QuestionnairesPage() {
 
         const rounds = response.rounds ?? [];
         const targetRound = rounds.find((round) => round?.name?.trim().toLowerCase() === 't0');
-        const nextSurveys = targetRound?.userSurvey?.filter((survey): survey is CardSurvey => Boolean(survey)) ?? [];
+        const fallbackRound = rounds.find((round) => Array.isArray(round?.userSurvey) && round.userSurvey.length > 0);
+        const effectiveRound = targetRound ?? fallbackRound ?? null;
+        const nextSurveys = effectiveRound?.userSurvey?.filter((survey): survey is CardSurvey => Boolean(survey)) ?? [];
 
         setSurveys(nextSurveys);
-        setUserSurveyRoundId(targetRound?.idUserSurveyRound ?? null);
+        setUserSurveyRoundId(effectiveRound?.idUserSurveyRound ?? null);
+        setRoundName(effectiveRound?.name ?? null);
+        if (effectiveRound?.name) {
+          const normalizedName = effectiveRound.name.trim().toLowerCase();
+          setTabValue(normalizedName || 't0');
+        } else {
+          setTabValue('t0');
+        }
         lastFetchedTokenRef.current = token;
       })
       .catch((error: unknown) => {
@@ -550,6 +569,8 @@ export default function QuestionnairesPage() {
         setFetchError(message ?? DEFAULT_FETCH_ERROR_MESSAGE);
         setSurveys([]);
         setUserSurveyRoundId(null);
+        setRoundName(null);
+        setTabValue('t0');
         lastFetchedTokenRef.current = null;
       })
       .finally(() => {
@@ -578,7 +599,7 @@ export default function QuestionnairesPage() {
   const questionnaireCards = useMemo<ReadonlyArray<CardModel>>(
     () => surveys.map((survey) => {
       const status = resolveCardStatus(survey.status);
-      const title = resolveSurveyTitle(survey, i18n.language);
+      const title = resolveSurveyTitle(survey, currentLanguage, normalizeTranslation);
       const customContinueLabel: string | undefined = status === 'not_started' ? startLabel : continueLabel;
 
       return {
@@ -590,7 +611,7 @@ export default function QuestionnairesPage() {
         customContinueLabel,
       } satisfies CardModel;
     }),
-    [surveys, t, i18n.language, continueLabel, startLabel],
+    [surveys, currentLanguage, normalizeTranslation, t, continueLabel, startLabel],
   );
 
   const filteredQuestionnaires = useMemo<ReadonlyArray<CardModel>>(
@@ -625,11 +646,17 @@ export default function QuestionnairesPage() {
 
   const currentFilterLabel = filterLabels.get(statusFilter) ?? '';
 
-  const tabItems = useMemo<ReadonlyArray<TabItem>>(() => ([
-    { value: 't0', label: 'T0' },
-  ]
-    .map((tab) => ({
-      ...tab,
+  const tabItems = useMemo<ReadonlyArray<TabItem>>(() => {
+    const isLoading = isFetching && !roundName;
+    const formattedRoundName = roundName ? normalizeTranslation(roundName) : '';
+    const displayLabel = isLoading ? (
+      <Skeleton className="questionnaires-tab-skeleton" />
+    ) : formattedRoundName;
+    const value = (roundName?.trim().toLowerCase()) || 't0';
+
+    return [{
+      value,
+      label: displayLabel,
       content: (
         <section
           className="questionnaires-page-content"
@@ -647,8 +674,8 @@ export default function QuestionnairesPage() {
           />
         </section>
       ),
-    }))
-  ), [continueLabel, effectiveEmptyDescription, emptyTitle, filteredQuestionnaires, handleContinueSurvey, isFetching, responsesLabel]);
+    }];
+  }, [continueLabel, effectiveEmptyDescription, emptyTitle, filteredQuestionnaires, handleContinueSurvey, isFetching, normalizeTranslation, responsesLabel, roundName]);
 
   const dialogContinueLabel = t('actions.continue' as QuestionnaireActionKey);
   const dialogBackLabel = t('actions.back' as QuestionnaireActionKey);
@@ -659,7 +686,7 @@ export default function QuestionnairesPage() {
   const hasQuestions = activeSurveyQuestions.length > 0;
   const currentQuestion = hasQuestions ? activeSurveyQuestions[currentQuestionIndex] : null;
   const currentQuestionAnswer = currentQuestion ? questionAnswers[currentQuestion.id] ?? null : null;
-  const dialogSubtitle = currentQuestion ? resolveQuestionTitle(currentQuestion, i18n.language) : undefined;
+  const dialogSubtitle = currentQuestion ? resolveQuestionTitle(currentQuestion, currentLanguage) : undefined;
   const totalQuestions = activeSurveyQuestions.length;
   const handleGoBack = useCallback(() => {
     clearSubmitAnswerRequest();
@@ -900,7 +927,7 @@ export default function QuestionnairesPage() {
         <li className="survey-questions-list__item">
           <SurveyQuestionStep
             question={currentQuestion}
-            language={i18n.language}
+            language={currentLanguage}
             answerValue={currentQuestionAnswer ?? null}
             onAnswerChange={(value) => handleQuestionAnswerChange(currentQuestion.id, value)}
           />
@@ -945,7 +972,11 @@ export default function QuestionnairesPage() {
         />
       </div>
 
-      <Tab items={tabItems} defaultValue="t0" />
+      <Tab
+        items={tabItems}
+        value={tabValue}
+        onValueChange={setTabValue}
+      />
 
       <div className="survey-questions-dialog">
         <Dialog

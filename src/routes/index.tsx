@@ -11,6 +11,8 @@ import AdminPage from '@/pages/user-admin/UserAdminPage';
 import ManagerPage from '@/pages/user-manager/UserManagerPage';
 import BottomNavLayout from '@/layout/user-layout/BottomNavLayout';
 import { DEFAULT_BOTTOM_NAVBAR_ITEMS } from '@/components/navbar/bottom-navbar/defaultItems';
+import ConfirmEmailPage from '@/pages/auth/confirm-email/ConfirmEmailPage';
+import NotFoundRedirect from '@/routes/not-found/NotFoundRedirect';
 
 export default function AppRoutes() {
   return (
@@ -25,11 +27,11 @@ export default function AppRoutes() {
       />
       <Route
         path="/confirm-token-email"
-        element={
+        element={(
           <PublicRoute allowWhenAuthenticated>
-            <HomePage />
+            <ConfirmEmailPage />
           </PublicRoute>
-        }
+        )}
       />
       <Route 
         element={
@@ -60,6 +62,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route path="*" element={<NotFoundRedirect />} />
     </Routes>
   );
 }
