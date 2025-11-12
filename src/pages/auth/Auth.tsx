@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import Dialog from '@/components/dialog/Dialog';
 import ProgressLinear from '@/components/progress/progress-linear/ProgressLinear';
@@ -41,6 +42,7 @@ export default function Auth() {
     defaultValue: { title: '' },
   }) as { title: string };
 
+  const location = useLocation();
   const [view, setView] = useState<AuthView>('login');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginSubmitting, setLoginSubmitting] = useState(false);
@@ -68,6 +70,37 @@ export default function Auth() {
   const formId = 'auth-dialog-form';
   const ICON_SIZE = 18;
   const trimmedUserId = useMemo(() => (userId ?? '').trim(), [userId]);
+  const lastAutoConfirmKeyRef = useRef<string | null>(null);
+
+  const confirmEmailRouteData = useMemo(() => {
+    const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+
+    if (normalizedPath !== '/confirm-token-email') {
+      return null;
+    }
+
+    const params = new URLSearchParams(location.search);
+    const rawEmail = params.get('email');
+    const rawCode = params.get('token') ?? params.get('code');
+
+    if (!rawEmail || !rawCode) {
+      return null;
+    }
+
+    const trimmedEmail = rawEmail.trim();
+    const normalizedEmail = trimmedEmail.replace(/\s/g, '+');
+    const normalizedCode = rawCode.trim();
+
+    if (!normalizedEmail || !normalizedCode) {
+      return null;
+    }
+
+    return {
+      key: `${normalizedEmail}|${normalizedCode}`,
+      email: normalizedEmail,
+      code: normalizedCode,
+    };
+  }, [location.pathname, location.search]);
 
   const [confirmEmailErrorKey, setConfirmEmailErrorKey] = useState<ConfirmEmailErrorKey | null>(null);
   const [confirmEmailErrorMessage, setConfirmEmailErrorMessage] = useState<string | null>(null);
@@ -165,6 +198,8 @@ export default function Auth() {
     },
   });
 
+  const { mutate: mutateConfirmEmail, reset: resetConfirmEmailMutation } = confirmEmailMutation;
+
   const {
     handleDialogBodyScroll,
     resetScrollProgress,
@@ -240,8 +275,8 @@ export default function Auth() {
   const handleConsentConfirmed = useCallback(() => {
     setView('confirmEmail');
     clearConfirmEmailError();
-    confirmEmailMutation.reset();
-  }, [clearConfirmEmailError, confirmEmailMutation]);
+    resetConfirmEmailMutation();
+  }, [clearConfirmEmailError, resetConfirmEmailMutation]);
 
   const handleConfirmEmailUserIdChange = useCallback((id: string) => {
     setUserId(id);
@@ -261,8 +296,8 @@ export default function Auth() {
     };
 
     clearConfirmEmailError();
-    confirmEmailMutation.mutate(payload);
-  }, [clearConfirmEmailError, confirmEmailMutation, signupEmail, trimmedUserId]);
+    mutateConfirmEmail(payload);
+  }, [clearConfirmEmailError, mutateConfirmEmail, signupEmail, trimmedUserId]);
 
   const handleShowConsentText = useCallback(() => {
     setView('informedConsentText');
@@ -271,7 +306,6 @@ export default function Auth() {
   const handleBackFromConsentText = useCallback(() => {
     setView('informedConsent');
   }, []);
-
 
   const handleSignupTermsAcceptedChange = useCallback((accepted: boolean) => {
     setSignupTermsAccepted(accepted);
@@ -360,6 +394,32 @@ export default function Auth() {
       </div>
     );
   }, []);
+
+  useEffect(() => {
+    if (!confirmEmailRouteData) {
+      lastAutoConfirmKeyRef.current = null;
+      return;
+    }
+
+    const { email, code, key } = confirmEmailRouteData;
+
+    const isSamePayload = lastAutoConfirmKeyRef.current === key;
+
+    if (!isSamePayload) {
+      setSignupEmail(email);
+      setUserId(code);
+      lastAutoConfirmKeyRef.current = key;
+    }
+
+    setView('confirmEmail');
+    clearConfirmEmailError();
+    resetConfirmEmailMutation();
+    setDialogOpen(true);
+
+    if (!isSamePayload) {
+      mutateConfirmEmail({ email, code });
+    }
+  }, [clearConfirmEmailError, confirmEmailRouteData, mutateConfirmEmail, resetConfirmEmailMutation, setDialogOpen, setSignupEmail, setUserId, setView]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -580,7 +640,7 @@ export default function Auth() {
     consentBirthDate,
     consentDni,
     consentFullName,
-  consentTextCompleted,
+    consentTextCompleted,
     readingCompleted,
     signupPrivacyAccepted,
     signupSubmitting,
