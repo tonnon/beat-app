@@ -21,7 +21,6 @@ import type { RegisterUserPayload } from '@/services/auth/authService';
 import { useConsentProgress } from '@/hooks/useConsentProgress';
 import { type AuthView } from './constants';
 import './auth.scss';
-import { useAuthDialogFlowStore } from '@/stores/authDialogFlowStore';
 
 type TermsOfUseTranslation = {
   readonly title: string;
@@ -249,53 +248,25 @@ export default function Auth() {
     clearConfirmEmailError();
   }, [clearConfirmEmailError]);
 
-  const handleConfirmEmailSubmit = useCallback((payload?: ConfirmEmailPayload) => {
-    const nextPayload = payload ?? {
-      email: signupEmail.trim(),
-      code: trimmedUserId,
-    };
+  const handleConfirmEmailSubmit = useCallback(() => {
+    const trimmedEmail = signupEmail.trim();
 
-    if (!nextPayload.email || !nextPayload.code) {
+    if (!trimmedUserId || !trimmedEmail) {
       return;
     }
 
+    const payload: ConfirmEmailPayload = {
+      email: trimmedEmail,
+      code: trimmedUserId,
+    };
+
     clearConfirmEmailError();
-    confirmEmailMutation.mutate(nextPayload);
+    confirmEmailMutation.mutate(payload);
   }, [clearConfirmEmailError, confirmEmailMutation, signupEmail, trimmedUserId]);
 
   const handleShowConsentText = useCallback(() => {
     setView('informedConsentText');
   }, []);
-
-  const confirmEmailParams = useAuthDialogFlowStore((state) => state.confirmEmailParams);
-  const dialogTargetView = useAuthDialogFlowStore((state) => state.targetView);
-  const consumeConfirmEmailFlow = useAuthDialogFlowStore((state) => state.consumeConfirmEmailFlow);
-
-  useEffect(() => {
-    if (!confirmEmailParams) {
-      return;
-    }
-
-    const payload: ConfirmEmailPayload = {
-      email: confirmEmailParams.email,
-      code: confirmEmailParams.code,
-    };
-
-    setSignupEmail(payload.email);
-    setUserId(payload.code);
-
-    if (confirmEmailParams.autoConfirm) {
-      setView('confirmEmail');
-      handleConfirmEmailSubmit(payload);
-      consumeConfirmEmailFlow();
-    }
-  }, [confirmEmailParams, consumeConfirmEmailFlow, handleConfirmEmailSubmit]);
-
-  useEffect(() => {
-    if (dialogTargetView && view !== dialogTargetView) {
-      setView(dialogTargetView);
-    }
-  }, [dialogTargetView, setView, view]);
 
   const handleBackFromConsentText = useCallback(() => {
     setView('informedConsent');
