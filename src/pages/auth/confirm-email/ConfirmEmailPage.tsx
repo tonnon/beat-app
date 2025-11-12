@@ -3,9 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthDialog } from '@/context/auth/useAuthDialog';
 import { useAuthDialogFlowStore } from '@/stores/authDialogFlowStore';
 
+const normalizeEmailParam = (value: string) => {
+  return value.replace(/\s/g, '+').trim();
+};
+
 const extractQueryParams = (search: string) => {
   const params = new URLSearchParams(search);
-  const email = params.get('email');
+  const rawEmail = params.get('email');
+  const email = rawEmail ? normalizeEmailParam(rawEmail) : null;
   const code = params.get('token') ?? params.get('code');
 
   if (!email || !code) {
