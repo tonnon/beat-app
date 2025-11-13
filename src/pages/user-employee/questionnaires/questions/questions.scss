@@ -1,3 +1,26 @@
+$survey-question-step-gap: 1.5rem;
+$survey-question-step-content-gap: 0.75rem;
+$survey-question-step-content-width: min(520px, 100%);
+$survey-question-step-pretitle-font-size: 0.875rem;
+$survey-question-step-pretitle-font-weight: 400;
+$survey-question-step-help-font-size: 1rem;
+$survey-question-step-help-font-weight: 400;
+$survey-question-step-help-line-height: 1.5;
+$survey-question-step-skeleton-wrapper-gap: 1.2rem;
+$survey-question-step-skeleton-pretitle-width: 12rem;
+$survey-question-step-skeleton-pretitle-height: 1rem;
+$survey-question-step-skeleton-pretitle-radius: 0.5rem;
+$survey-question-step-skeleton-title-height: 2.5rem;
+$survey-question-step-skeleton-title-radius: 1.25rem;
+$survey-question-step-skeleton-option-height: 1.75rem;
+$survey-question-step-skeleton-option-radius: 0.875rem;
+$survey-question-step-options-gap: $survey-question-step-content-gap;
+$survey-questions-loading-gap: $survey-question-step-gap;
+$survey-questions-loading-padding: 2.5rem 1.5rem;
+$survey-questions-loading-min-height: 12rem;
+$survey-dialog-actions-gap: $survey-question-step-gap;
+$survey-dialog-actions-progress-font-weight: 400;
+
 .survey-question-step {
   display: flex;
   align-items: center;
@@ -5,63 +28,65 @@
   flex-direction: column;
   text-align: center;
   width: 100%;
-  padding: 0 1.5rem;
-  gap: 1.5rem;
-  margin-bottom: 24px;
+  gap: $survey-question-step-gap;
 }
 
 .survey-question-step-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  width: min(520px, 100%);
+  gap: $survey-question-step-content-gap;
+  width: $survey-question-step-content-width;
 }
 
 .survey-question-step-pretitle {
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: var(--gray-12, #3b3b3b);
+  font-size: $survey-question-step-pretitle-font-size;
+  font-weight: $survey-question-step-pretitle-font-weight;
+  color: $color-neutral-700;
 }
 
 .survey-question-step-help {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--gray-11, #6b6b6b);
-  line-height: 1.5;
+  font-size: $survey-question-step-help-font-size;
+  font-weight: $survey-question-step-help-font-weight;
+  color: $color-neutral-600;
+  line-height: $survey-question-step-help-line-height;
 }
 
 .survey-question-step-skeleton-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.20rem;
-  width: min(520px, 100%);
+  gap: $survey-question-step-skeleton-wrapper-gap;
+  width: $survey-question-step-content-width;
 }
 
 .survey-question-step-skeleton-pretitle {
-  width: 12rem;
-  height: 1rem;
-  border-radius: 0.5rem;
+  width: $survey-question-step-skeleton-pretitle-width;
+  height: $survey-question-step-skeleton-pretitle-height;
+  border-radius: $survey-question-step-skeleton-pretitle-radius;
 }
 
 .survey-question-step-skeleton-title {
   width: 100%;
-  height: 2.5rem;
-  border-radius: 1.25rem;
+  height: $survey-question-step-skeleton-title-height;
+  border-radius: $survey-question-step-skeleton-title-radius;
 }
 
 .survey-question-step-skeleton-options {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: $survey-question-step-content-gap;
   width: 100%;
 }
 
 .survey-question-step-skeleton-option {
   width: 100%;
-  height: 1.75rem;
-  border-radius: 0.875rem;
+  height: $survey-question-step-skeleton-option-height;
+  border-radius: $survey-question-step-skeleton-option-radius;
+}
+
+.survey-question-step-options__item + .survey-question-step-options__item {
+  margin-top: $survey-question-step-options-gap;
 }
 
 .survey-questions-loading {
@@ -69,15 +94,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  padding: 2.5rem 1.5rem;
+  gap: $survey-questions-loading-gap;
+  padding: $survey-questions-loading-padding;
   width: 100%;
-  min-height: 12rem;
+  min-height: $survey-questions-loading-min-height;
 }
 
 .survey-questions-loading-message {
   margin: 0;
-  color: var(--gray-11, #6b6b6b);
+  color: $color-neutral-600;
   text-align: center;
   font-size: var(--font-size-2, 1rem);
 }
@@ -87,7 +112,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 1.5rem;
+  gap: $survey-dialog-actions-gap;
 }
 
 .survey-dialog-actions-button {
@@ -107,7 +132,7 @@
   flex: 1;
   display: flex;
   justify-content: center;
-  font-weight: 700;
+  font-weight: $survey-dialog-actions-progress-font-weight;
 }
 
 .survey-dialog-actions-button-placeholder {
@@ -118,3 +143,4 @@
 .survey-questions-dialog .dialog-body {
   overflow-y: visible !important;
 }
+

@@ -1,0 +1,126 @@
+$textarea-gap: 0.6rem;
+$textarea-label-font-size: 0.875rem;
+$textarea-label-gap: 0.35rem;
+$textarea-label-icon-color: rgba($color-text, 0.75);
+$textarea-padding: 8px !important;
+$textarea-border-radius: 0.1875rem;
+$textarea-placeholder-color: rgba($color-text, 0.6);
+$textarea-focus-shadow: 0 0 0 3px rgba($color-success, 0.15);
+$textarea-transition-duration: 200ms;
+$textarea-border-color: $color-success;
+$textarea-hover-border-color: color.scale($color-success, $lightness: -12%);
+
+.app-textarea {
+  display: flex;
+  flex-direction: column;
+  gap: $textarea-gap;
+}
+
+.app-textarea-label-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-textarea-label {
+  display: flex;
+  align-items: center;
+  gap: $textarea-label-gap;
+  font-size: $textarea-label-font-size;
+  font-weight: 400;
+  color: $color-text;
+}
+
+.app-textarea-label-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $textarea-label-gap;
+  width: 100%;
+}
+
+.app-textarea-label-text {
+  display: inline-flex;
+  align-items: center;
+  gap: $textarea-label-gap;
+  flex: 1 1 auto;
+}
+
+.app-textarea-label-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $textarea-label-icon-color;
+  font-size: 1rem;
+}
+
+.app-textarea-label-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-textarea-required-indicator {
+  color: $color-error;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.app-textarea-input {
+  width: 100%;
+  min-height: 6.5rem;
+  padding: $textarea-padding;
+  border: 1px solid $textarea-border-color;
+  border-radius: $textarea-border-radius;
+  background-color: $color-surface;
+  color: $color-text;
+  font-size: 1rem;
+  font-family: $font-family-base;
+  line-height: 1.5;
+  resize: vertical;
+  transition:
+    border-color $textarea-transition-duration ease,
+    box-shadow $textarea-transition-duration ease,
+    background-color $textarea-transition-duration ease;
+
+  &::placeholder {
+    color: $textarea-placeholder-color;
+    font-size: 0.875rem;
+  }
+
+  &:hover {
+    border-color: $textarea-hover-border-color;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $textarea-border-color;
+    box-shadow: $textarea-focus-shadow;
+  }
+
+  &:disabled {
+    background-color: rgba($color-border, 0.2);
+    color: rgba($color-text, 0.6);
+    cursor: not-allowed;
+  }
+}
+
+.app-textarea-input--error {
+  border-color: $color-error;
+
+  &:hover {
+    border-color: $color-error;
+  }
+
+  &:focus {
+    border-color: $color-error;
+    box-shadow: none;
+  }
+}
+
+.app-textarea-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgba($color-text, 0.7);
+}

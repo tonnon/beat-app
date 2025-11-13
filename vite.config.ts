@@ -3,12 +3,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
@@ -16,12 +17,12 @@ export default defineConfig({
       '/api': {
         target: 'https://api-beatapp.oleandrosantos.me',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
       '/response': {
         target: 'https://api-beatapp.oleandrosantos.me',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },

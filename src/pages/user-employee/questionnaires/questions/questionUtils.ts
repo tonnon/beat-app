@@ -73,4 +73,54 @@ export const resolveQuestionTitle = (question: SurveyQuestion, language: string)
   normalizeTranslationText(resolveQuestionTranslation(question, language)?.title)
 );
 
-export const normalizeQuestionType = (type: string | null | undefined): string => type?.trim().toLowerCase() ?? '';
+export const normalizeQuestionType = (type: string | null | undefined): string => {
+  if (!type) {
+    return '';
+  }
+
+  const trimmed = type.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  const collapsed = trimmed.replace(/[\s_-]+/g, '').toLowerCase();
+
+  switch (collapsed) {
+    case 'date':
+    case 'datepicker':
+    case 'calendar':
+      return 'date';
+    case 'singlechoice':
+    case 'singleoption':
+    case 'single':
+    case 'radio':
+      return 'singlechoice';
+    case 'hourandminute':
+    case 'hourminute':
+    case 'hourminutes':
+    case 'hoursandminutes':
+    case 'hoursminutes':
+    case 'hourmin':
+      return 'hourandminute';
+    case 'days':
+    case 'day':
+    case 'dayperweek':
+    case 'daysperweek':
+    case 'weekday':
+    case 'weekdays':
+      return 'days';
+    case 'text':
+    case 'textarea':
+    case 'textanswer':
+    case 'longtext':
+    case 'freetext':
+    case 'open':
+    case 'openanswer':
+    case 'openended':
+    case 'paragraph':
+      return 'text';
+    default:
+      return trimmed.toLowerCase();
+  }
+};

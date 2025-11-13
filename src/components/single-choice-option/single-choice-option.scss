@@ -1,0 +1,66 @@
+$single-choice-option-spacing: 0.75rem;
+$single-choice-option-wrapper-padding: 0.875rem 1.5rem;
+$single-choice-option-wrapper-radius: 0.1875rem;
+$single-choice-option-wrapper-gap: 1rem;
+$single-choice-option-wrapper-bg: rgba($progress-primary, 0.12);
+$single-choice-option-wrapper-hover-bg: rgba($progress-primary, 0.2);
+$single-choice-option-label-font-size: 1rem;
+$single-choice-option-label-font-weight: 400;
+$single-choice-option-checkbox-size: 1.5rem;
+$single-choice-option-checkbox-border-width: 0.125rem;
+$single-choice-option-checkbox-radius: 999px;
+$single-choice-option-checkbox-indicator-size: 0.85rem;
+
+.single-choice-option {
+  width: 100%;
+}
+
+.single-choice-option + .single-choice-option {
+  margin-top: $single-choice-option-spacing;
+}
+
+.single-choice-option-wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: $single-choice-option-wrapper-padding;
+  border-radius: $single-choice-option-wrapper-radius;
+  background: $single-choice-option-wrapper-bg;
+  gap: $single-choice-option-wrapper-gap;
+  cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.single-choice-option-wrapper:hover {
+  background: $single-choice-option-wrapper-hover-bg;
+}
+
+.single-choice-option-label {
+  flex: 1;
+  font-weight: $single-choice-option-label-font-weight;
+  font-size: $single-choice-option-label-font-size;
+  text-align: left;
+  color: $color-neutral-900;
+}
+
+.single-choice-option-wrapper .checkbox {
+  width: $single-choice-option-checkbox-size;
+  height: $single-choice-option-checkbox-size;
+  border-width: $single-choice-option-checkbox-border-width;
+  border-radius: $single-choice-option-checkbox-radius;
+  background: transparent;
+  border-color: $button-color-primary;
+}
+
+.single-choice-option-wrapper .checkbox[data-state='checked'] {
+  background: $button-color-primary;
+  border-color: $button-color-primary;
+  color: $color-white;
+}
+
+.single-choice-option-wrapper .checkbox-indicator svg {
+  width: $single-choice-option-checkbox-indicator-size;
+  height: $single-choice-option-checkbox-indicator-size;
+}

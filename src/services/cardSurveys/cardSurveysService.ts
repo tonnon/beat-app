@@ -95,6 +95,8 @@ export interface SurveyQuestion {
   readonly id: number;
   readonly orderIndex: number;
   readonly type: string;
+  readonly displayConditionQuestionId?: number | null;
+  readonly displayConditionOptionId?: number | string | null;
   readonly translations: ReadonlyArray<SurveyQuestionTranslation> | null;
   readonly questionTranslations?: ReadonlyArray<SurveyQuestionTranslation> | null;
   readonly answerOptions: ReadonlyArray<SurveyAnswerOption> | null;
@@ -196,6 +198,122 @@ export async function fetchSurveyWithQuestions(
   }
 }
 
+const normalizeAnswerOptionId = (value: unknown): number | null => {
+  if (value == null) {
+    return null;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number.parseInt(value.trim(), 10);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+export interface FetchSurveyAnswersOptions {
+  readonly signal?: AbortSignal;
+  readonly forceRemote?: boolean;
+}
+
+export async function fetchSurveyAnswers(
+  token: string,
+  userSurveyRoundId: number | string,
+  surveyId: number | string,
+  options: FetchSurveyAnswersOptions = {},
+): Promise<ReadonlyArray<SurveyQuestionAnswer>> {
+  const trimmedToken = token?.trim() ?? '';
+
+  if (!trimmedToken) {
+    throw new ApiError('Authentication token is required to fetch survey answers', 'Authentication token is required to fetch survey answers');
+  }
+
+  const { signal, forceRemote = false } = options;
+
+  const normalizedRoundId = String(userSurveyRoundId ?? '').trim();
+  const normalizedSurveyId = String(surveyId ?? '').trim();
+
+  if (!normalizedRoundId || !normalizedSurveyId) {
+    throw new ApiError('Both userSurveyRoundId and surveyId are required to fetch survey answers', 'Both userSurveyRoundId and surveyId are required to fetch survey answers');
+  }
+
+  const params = new URLSearchParams({
+    userSurveyRoundId: normalizedRoundId,
+    surveyId: normalizedSurveyId,
+  });
+
+  const answersPath = API_PATHS.getAnswers ?? API_PATHS.questionAnswer ?? '/response';
+  const shouldUseRelativeUrl = !forceRemote && typeof window !== 'undefined';
+  const urlBase = shouldUseRelativeUrl ? answersPath : resolveApiUrl(answersPath);
+  const url = `${urlBase}?${params.toString()}`;
+
+  try {
+    const response = await ensureSuccessfulResponse(await fetch(url, {
+      signal,
+      headers: {
+        Authorization: `Bearer ${trimmedToken}`,
+        Accept: 'application/json',
+      },
+    }));
+
+    const payload = await response.json().catch(() => null);
+
+    const candidates = Array.isArray(payload)
+      ? payload
+      : Array.isArray((payload as { data?: unknown }).data)
+        ? (payload as { data: unknown }).data
+        : Array.isArray((payload as { answers?: unknown }).answers)
+          ? (payload as { answers: unknown }).answers
+          : [];
+
+    return (candidates as ReadonlyArray<Record<string, unknown>>).reduce<SurveyQuestionAnswer[]>((accumulator, item) => {
+      const questionIdCandidate = item?.questionId;
+      const questionId = typeof questionIdCandidate === 'number'
+        ? questionIdCandidate
+        : typeof questionIdCandidate === 'string'
+          ? Number.parseInt(questionIdCandidate.trim(), 10)
+          : Number.NaN;
+
+      if (!Number.isFinite(questionId)) {
+        return accumulator;
+      }
+
+      const responseTextCandidate = item?.responseText;
+      const textCandidate = item?.text;
+
+      accumulator.push({
+        questionId,
+        answerOptionId: normalizeAnswerOptionId(item?.answerOptionId),
+        responseText: typeof responseTextCandidate === 'string' ? responseTextCandidate : null,
+        text: typeof textCandidate === 'string' ? textCandidate : null,
+      });
+
+      return accumulator;
+    }, []);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      throw new ApiError(error.message, error.message);
+    }
+
+    throw new ApiError('Unknown error occurred while fetching survey answers', String(error));
+  }
+}
+
 export async function submitQuestionAnswer(token: string, payload: QuestionAnswerPayload, signal?: AbortSignal): Promise<void> {
   const url = resolveApiUrl(API_PATHS.questionAnswer);
 
@@ -233,5 +351,45 @@ export async function submitQuestionAnswer(token: string, payload: QuestionAnswe
     }
 
     throw new ApiError('Unknown error occurred while submitting question answer', String(error));
+  }
+}
+
+export async function updateQuestionAnswer(token: string, payload: QuestionAnswerPayload, signal?: AbortSignal): Promise<void> {
+  const url = resolveApiUrl(API_PATHS.editAnswer ?? API_PATHS.questionAnswer);
+
+  try {
+    const trimmedToken = token?.trim() ?? '';
+
+    if (!trimmedToken) {
+      throw new ApiError('Authentication token is required to update question answers', 'Authentication token is required to update question answers');
+    }
+
+    const response = await ensureSuccessfulResponse(await fetch(url, {
+      method: 'PUT',
+      signal,
+      headers: {
+        Authorization: `Bearer ${trimmedToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }));
+
+    if (response.status !== 204) {
+      await response.text().catch(() => null);
+    }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      throw new ApiError(error.message, error.message);
+    }
+
+    throw new ApiError('Unknown error occurred while updating question answer', String(error));
   }
 }

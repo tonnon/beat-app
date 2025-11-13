@@ -1,14 +1,14 @@
-const isBrowserEnvironment = typeof window !== 'undefined';
+const isDevEnvironment = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
 
-const DEFAULT_API_BASE_URL = isBrowserEnvironment ? '' : 'https://api-beatapp.oleandrosantos.me';
+const DEFAULT_API_BASE_URL = isDevEnvironment ? '' : 'https://api-beatapp.oleandrosantos.me';
 
 const runtimeBaseUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
-  ? import.meta.env.VITE_API_BASE_URL
+  ? String(import.meta.env.VITE_API_BASE_URL).trim()
   : undefined;
 
-const devBaseUrl = typeof import.meta !== 'undefined' && import.meta.env?.DEV ? '' : undefined;
-
-const API_BASE_URL = runtimeBaseUrl ?? devBaseUrl ?? DEFAULT_API_BASE_URL;
+const API_BASE_URL = runtimeBaseUrl && runtimeBaseUrl.length > 0
+  ? runtimeBaseUrl
+  : DEFAULT_API_BASE_URL;
 
 const API_PATHS = {
   avaibleLanguages: '/api/users/available-languages',
@@ -23,7 +23,9 @@ const API_PATHS = {
   checkCompanyCode: '/api/companies/check-code',
   cardSurveys: '/api/UserSurveyRounds/surveys',
   surveyQuestions: (surveyId: number | string) => `/api/surveys/${surveyId}/with-questions`,
-  questionAnswer: '/response',
+  questionAnswer: '/api/surveys/questions/response',
+  getAnswers: '/api/surveys/questions/response',
+  editAnswer: '/api/surveys/questions/response',
 } as const;
 
 const resolveApiUrl = (path: string) => `${API_BASE_URL}${path}`;

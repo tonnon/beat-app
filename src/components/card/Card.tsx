@@ -41,11 +41,11 @@ export default function Card({
   headerColor,
   progressColor,
 }: CardProps) {
-  const isComplete = progress >= 100;
   const accentColor = headerColor ?? '#079fa4';
   const style = {
     '--questionnaire-status-bar-bg': accentColor,
   } as CSSProperties & Record<string, string>;
+  const isContinueDisabled = typeof onContinue !== 'function';
 
   return (
     <article className="questionnaire-card" data-status={status} style={style}>
@@ -69,7 +69,7 @@ export default function Card({
         <Button
           variant="solid"
           onClick={() => onContinue?.(id)}
-          disabled={isComplete}
+          disabled={isContinueDisabled}
         >
           {customContinueLabel ?? continueLabel}
         </Button>

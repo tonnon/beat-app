@@ -11,14 +11,15 @@ export interface CheckboxProps extends RadixCheckboxProps {
   readonly wrapperClassName?: string;
   readonly label?: ReactNode;
   readonly labelClassName?: string;
+  readonly variant?: 'rounded-checkbox';
 }
 
 const Checkbox = forwardRef<HTMLButtonElement, CheckboxProps>((
-  { className, wrapperClassName, label, labelClassName, ...props },
+  { className, wrapperClassName, label, labelClassName, variant, ...props },
   ref
 ) => {
   const wrapperClasses = wrapperClassName ? `checkbox-wrapper ${wrapperClassName}` : 'checkbox-wrapper';
-  const checkboxClasses = className ? `checkbox ${className}` : 'checkbox';
+  const checkboxClasses = ['checkbox', variant, className].filter(Boolean).join(' ');
   const labelClasses = ['checkbox-label', labelClassName].filter(Boolean).join(' ');
 
   return (
