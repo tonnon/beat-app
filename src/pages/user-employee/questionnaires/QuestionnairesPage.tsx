@@ -224,48 +224,20 @@ const sortSurveyQuestions = (questionsInput: ReadonlyArray<SurveyQuestion> | nul
   });
 };
 
-const isQuestionVisible = (
-  _question: SurveyQuestion,
-  _answers: Record<number, Date | number | string | null>,
-  _questionLookup: ReadonlyMap<number, SurveyQuestion>,
-): boolean => true;
-
-const findNextVisibleIndex = (
-  questions: ReadonlyArray<SurveyQuestion>,
-  answers: Record<number, Date | number | string | null>,
-  questionLookup: ReadonlyMap<number, SurveyQuestion>,
-  startIndex: number,
-): number => {
-  if (!questions.length) {
+const clampQuestionIndex = (index: number, total: number): number => {
+  if (total <= 0) {
     return -1;
   }
 
-  for (let index = Math.max(startIndex, 0); index < questions.length; index += 1) {
-    if (isQuestionVisible(questions[index], answers, questionLookup)) {
-      return index;
-    }
+  if (index < 0) {
+    return 0;
   }
 
-  return -1;
-};
-
-const findPreviousVisibleIndex = (
-  questions: ReadonlyArray<SurveyQuestion>,
-  answers: Record<number, Date | number | string | null>,
-  questionLookup: ReadonlyMap<number, SurveyQuestion>,
-  startIndex: number,
-): number => {
-  if (!questions.length) {
-    return -1;
+  if (index >= total) {
+    return total - 1;
   }
 
-  for (let index = Math.min(startIndex, questions.length - 1); index >= 0; index -= 1) {
-    if (isQuestionVisible(questions[index], answers, questionLookup)) {
-      return index;
-    }
-  }
-
-  return -1;
+  return index;
 };
 
 export default function QuestionnairesPage() {
@@ -378,7 +350,7 @@ export default function QuestionnairesPage() {
         }
 
         const sortedQuestions = sortSurveyQuestions(data.questions);
-        const questionLookup = new Map(sortedQuestions.map((question) => [question.id, question]));
+        const questionById = new Map(sortedQuestions.map((question) => [question.id, question]));
         let answers: ReadonlyArray<SurveyQuestionAnswer> = Array.isArray(data.answers) ? data.answers : [];
 
         if (userSurveyRoundId != null) {
@@ -496,7 +468,7 @@ export default function QuestionnairesPage() {
         }
 
         const nextQuestionAnswers = answers.reduce<Record<number, Date | number | string | null>>((accumulator, answer) => {
-          const question = questionLookup.get(answer.questionId);
+          const question = questionById.get(answer.questionId);
 
           if (!question) {
             return accumulator;
@@ -553,11 +525,7 @@ export default function QuestionnairesPage() {
         const preferredIndex = firstUnansweredIndex === -1
           ? Math.max(sortedQuestions.length - 1, 0)
           : firstUnansweredIndex;
-        const initialVisible = findNextVisibleIndex(sortedQuestions, nextQuestionAnswers, questionLookup, preferredIndex);
-        const fallbackVisible = findNextVisibleIndex(sortedQuestions, nextQuestionAnswers, questionLookup, 0);
-        const resolvedInitialIndex = initialVisible === -1
-          ? (fallbackVisible === -1 ? 0 : fallbackVisible)
-          : initialVisible;
+        const resolvedInitialIndex = clampQuestionIndex(preferredIndex, sortedQuestions.length);
 
         setActiveSurveyData(data);
         setActiveSurveyQuestions(sortedQuestions);
@@ -570,7 +538,7 @@ export default function QuestionnairesPage() {
           });
           return lookup;
         });
-        setCurrentQuestionIndex(resolvedInitialIndex);
+        setCurrentQuestionIndex(resolvedInitialIndex === -1 ? 0 : resolvedInitialIndex);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) {
@@ -834,46 +802,10 @@ export default function QuestionnairesPage() {
   const dialogRetryLabel = t('actions.retry' as QuestionnaireActionKey);
   const dialogErrorMessage = surveyDialogError ?? t('dialog.error' as QuestionnairesDialogKey);
 
-  const questionLookup = useMemo(() => new Map(activeSurveyQuestions.map((question) => [question.id, question])), [activeSurveyQuestions]);
-  const visibleQuestions = useMemo(
-    () => activeSurveyQuestions.filter((question) => isQuestionVisible(question, questionAnswers, questionLookup)),
-    [activeSurveyQuestions, questionAnswers, questionLookup],
-  );
-  const totalQuestions = visibleQuestions.length;
+  const totalQuestions = activeSurveyQuestions.length;
   const hasQuestions = totalQuestions > 0;
-  const visibleQuestionIndex = useMemo(() => {
-    if (!hasQuestions) {
-      return -1;
-    }
-
-    if (currentQuestionIndex >= 0 && currentQuestionIndex < totalQuestions) {
-      const candidate = activeSurveyQuestions[currentQuestionIndex];
-
-      if (candidate && isQuestionVisible(candidate, questionAnswers, questionLookup)) {
-        return currentQuestionIndex;
-      }
-    }
-
-    const nextVisible = findNextVisibleIndex(activeSurveyQuestions, questionAnswers, questionLookup, currentQuestionIndex);
-
-    if (nextVisible !== -1) {
-      return nextVisible;
-    }
-
-    return findPreviousVisibleIndex(activeSurveyQuestions, questionAnswers, questionLookup, currentQuestionIndex - 1);
-  }, [activeSurveyQuestions, currentQuestionIndex, hasQuestions, questionAnswers, questionLookup, totalQuestions]);
-
-  useEffect(() => {
-    if (!hasQuestions) {
-      return;
-    }
-
-    if (visibleQuestionIndex !== -1 && visibleQuestionIndex !== currentQuestionIndex) {
-      setCurrentQuestionIndex(visibleQuestionIndex);
-    }
-  }, [currentQuestionIndex, hasQuestions, visibleQuestionIndex]);
-
-  const currentQuestion = visibleQuestionIndex !== -1 ? activeSurveyQuestions[visibleQuestionIndex] : null;
+  const resolvedCurrentIndex = clampQuestionIndex(currentQuestionIndex, totalQuestions);
+  const currentQuestion = hasQuestions ? activeSurveyQuestions[resolvedCurrentIndex] ?? null : null;
   const currentQuestionAnswer = currentQuestion ? questionAnswers[currentQuestion.id] ?? null : null;
   const dialogSubtitle = currentQuestion ? resolveQuestionTitle(currentQuestion, currentLanguage) : undefined;
   const handleGoBack = useCallback(() => {
@@ -885,13 +817,11 @@ export default function QuestionnairesPage() {
       return;
     }
 
-    const effectiveIndex = visibleQuestionIndex !== -1 ? visibleQuestionIndex : currentQuestionIndex;
-    const previousIndex = findPreviousVisibleIndex(activeSurveyQuestions, questionAnswers, questionLookup, effectiveIndex - 1);
-
-    if (previousIndex !== -1) {
-      setCurrentQuestionIndex(previousIndex);
-    }
-  }, [activeSurveyQuestions, clearSubmitAnswerRequest, currentQuestionIndex, hasQuestions, questionAnswers, questionLookup, visibleQuestionIndex]);
+    setCurrentQuestionIndex((previous) => {
+      const nextIndex = previous - 1;
+      return nextIndex <= 0 ? 0 : nextIndex;
+    });
+  }, [clearSubmitAnswerRequest, hasQuestions]);
 
   const handleGoNext = useCallback(async () => {
     if (isSubmittingAnswer) {
@@ -899,7 +829,8 @@ export default function QuestionnairesPage() {
     }
 
     const trimmedToken = accessToken?.trim() ?? '';
-    const question = activeSurveyQuestions[currentQuestionIndex];
+    const clampedIndex = clampQuestionIndex(currentQuestionIndex, totalQuestions);
+    const question = activeSurveyQuestions[clampedIndex];
 
     if (!question) {
       return;
@@ -985,12 +916,10 @@ export default function QuestionnairesPage() {
       }
 
       setCurrentQuestionIndex((index) => {
-        const nextIndex = findNextVisibleIndex(activeSurveyQuestions, {
-          ...questionAnswers,
-          [question.id]: answerValue,
-        }, questionLookup, index + 1);
+        const effectiveIndex = clampQuestionIndex(index, totalQuestions);
+        const nextIndex = effectiveIndex + 1;
 
-        if (nextIndex === -1) {
+        if (nextIndex >= totalQuestions || nextIndex === -1) {
           if (activeSurveyId) {
             setLocalSurveyProgress((previous) => (
               previous[activeSurveyId] === 100
@@ -1011,7 +940,7 @@ export default function QuestionnairesPage() {
           }
 
           closeSurveyDialog();
-          return index;
+          return effectiveIndex;
         }
 
         return nextIndex;
@@ -1052,7 +981,6 @@ export default function QuestionnairesPage() {
     currentQuestionIndex,
     isSubmittingAnswer,
     questionAnswers,
-    questionLookup,
     setLocalSurveyProgress,
     setLocalSurveyStatus,
     t,
@@ -1153,7 +1081,7 @@ export default function QuestionnairesPage() {
 
     const answeredQuestions = new Set<number>();
 
-    for (const question of visibleQuestions) {
+    for (const question of activeSurveyQuestions) {
       const value = questionAnswers[question.id] ?? null;
 
       if (value instanceof Date) {
@@ -1210,11 +1138,10 @@ export default function QuestionnairesPage() {
         [activeSurveyId]: nextStatus,
       };
     });
-  }, [activeSurveyId, activeSurveyQuestions, questionAnswers, persistedAnswerLookup, questionLookup, totalQuestions, visibleQuestions]);
+  }, [activeSurveyId, activeSurveyQuestions, questionAnswers, persistedAnswerLookup, totalQuestions]);
 
   const dialogActions = useMemo(() => {
-    const currentIndex = visibleQuestionIndex + 1;
-    const progressLabel = totalQuestions > 0 && visibleQuestionIndex !== -1 ? `${currentIndex}/${totalQuestions}` : '';
+    const progressLabel = totalQuestions > 0 ? `${clampQuestionIndex(currentQuestionIndex, totalQuestions) + 1}/${totalQuestions}` : '';
 
     if (!isSurveyDialogOpen) {
       return null;
@@ -1249,7 +1176,7 @@ export default function QuestionnairesPage() {
       );
     }
 
-    const isLastStep = visibleQuestionIndex >= totalQuestions - 1 && totalQuestions > 0;
+    const isLastStep = clampQuestionIndex(currentQuestionIndex, totalQuestions) >= totalQuestions - 1 && totalQuestions > 0;
 
     return (
       <div className="survey-dialog-actions">
@@ -1257,7 +1184,7 @@ export default function QuestionnairesPage() {
           <Button
             variant="border"
             onClick={handleGoBack}
-            disabled={currentQuestionIndex === 0 || isSubmittingAnswer}
+            disabled={resolvedCurrentIndex === 0 || isSubmittingAnswer}
           >
             <ArrowLeftIcon width={16} height={16} />
             {dialogBackLabel}
