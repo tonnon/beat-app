@@ -1,0 +1,95 @@
+@use '@/styles/theme' as *;
+
+$slider-gap: 0.75rem;
+$slider-root-height: 1.5rem;
+$slider-padding-x: 0.75rem;
+$slider-track-height: 0.25rem;
+$slider-thumb-size: 1.25rem;
+$slider-thumb-border-width: 0.125rem;
+$slider-thumb-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+$slider-thumb-hover-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.2);
+$slider-hover-scale: 1.05;
+$slider-description-font-size: 0.875rem;
+$slider-marks-font-size: 0.75rem;
+$slider-mark-min-width: 1.25rem;
+$slider-mark-font-weight-active: 600;
+$slider-disabled-opacity: 0.6;
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: $slider-gap;
+}
+
+.slider--disabled {
+  opacity: $slider-disabled-opacity;
+  pointer-events: none;
+}
+
+.slider-description {
+  font-size: $slider-description-font-size;
+  color: $color-neutral-600;
+}
+
+.slider-root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: $slider-root-height;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.slider-track {
+  position: relative;
+  width: 100%;
+  height: $slider-track-height;
+  border-radius: 999px;
+  background-color: $progress-track;
+}
+
+.slider-range {
+  position: absolute;
+  height: 100%;
+  border-radius: 999px;
+  background-color: $progress-primary;
+}
+
+.slider-thumb {
+  display: block;
+  width: $slider-thumb-size;
+  height: $slider-thumb-size;
+  border-radius: 50%;
+  background-color: $color-white;
+  border: $slider-thumb-border-width solid $progress-primary;
+  box-shadow: $slider-thumb-shadow;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.slider-thumb:hover,
+.slider-thumb:focus-visible {
+  transform: scale($slider-hover-scale);
+  box-shadow: $slider-thumb-hover-shadow;
+}
+
+.slider-marks {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: $slider-marks-font-size;
+  color: $color-neutral-600;
+}
+
+.slider-mark {
+  min-width: $slider-mark-min-width;
+  text-align: center;
+}
+
+.slider-mark--active {
+  color: $color-neutral-900;
+  font-weight: $slider-mark-font-weight-active;
+}

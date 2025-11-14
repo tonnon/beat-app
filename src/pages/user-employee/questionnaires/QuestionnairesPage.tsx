@@ -19,6 +19,7 @@ import {
   fetchCardSurveys,
   fetchSurveyAnswers,
   fetchSurveyWithQuestions,
+  checkDisplayConditionalQuestion,
   submitQuestionAnswer,
   updateQuestionAnswer,
 } from '@/services/cardSurveys/cardSurveysService';
@@ -264,6 +265,7 @@ export default function QuestionnairesPage() {
   const [activeSurveyQuestions, setActiveSurveyQuestions] = useState<ReadonlyArray<SurveyQuestion>>([]);
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, Date | number | string | null>>({});
   const [persistedAnswerLookup, setPersistedAnswerLookup] = useState<Record<number, true>>({});
+  const [hiddenQuestionLookup, setHiddenQuestionLookup] = useState<Record<number, true>>({});
   const submitAnswerAbortControllerRef = useRef<AbortController | null>(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [submitAnswerError, setSubmitAnswerError] = useState<string | null>(null);
@@ -510,6 +512,13 @@ export default function QuestionnairesPage() {
             if (!Number.isNaN(parsedNumber)) {
               accumulator[answer.questionId] = Math.min(7, Math.max(0, parsedNumber));
             }
+          } else if (normalizedType === 'numeric') {
+            const rawNumericText = resolveAnswerText(answer);
+            const parsedNumber = Number.parseFloat(rawNumericText ?? '');
+
+            if (!Number.isNaN(parsedNumber)) {
+              accumulator[answer.questionId] = parsedNumber;
+            }
           } else if (normalizedType === 'text') {
             const normalized = resolveAnswerText(answer);
 
@@ -538,6 +547,7 @@ export default function QuestionnairesPage() {
           });
           return lookup;
         });
+        setHiddenQuestionLookup({});
         setCurrentQuestionIndex(resolvedInitialIndex === -1 ? 0 : resolvedInitialIndex);
       })
       .catch((error: unknown) => {
@@ -766,6 +776,10 @@ export default function QuestionnairesPage() {
   const currentFilterLabel = filterLabels.get(statusFilter) ?? '';
 
   const tabItems = useMemo<ReadonlyArray<TabItem>>(() => {
+    if (!surveys.length) {
+      return [];
+    }
+
     const isLoading = isFetching && !roundName;
     const formattedRoundName = roundName ? normalizeTranslation(roundName) : '';
     const displayLabel = isLoading ? (
@@ -794,7 +808,7 @@ export default function QuestionnairesPage() {
         </section>
       ),
     }];
-  }, [continueLabel, effectiveEmptyDescription, emptyTitle, filteredQuestionnaires, handleContinueSurvey, isFetching, normalizeTranslation, responsesLabel, roundName]);
+  }, [continueLabel, effectiveEmptyDescription, emptyTitle, filteredQuestionnaires, handleContinueSurvey, isFetching, normalizeTranslation, responsesLabel, roundName, surveys.length]);
 
   const dialogContinueLabel = t('actions.continue' as QuestionnaireActionKey);
   const dialogBackLabel = t('actions.back' as QuestionnaireActionKey);
@@ -808,6 +822,22 @@ export default function QuestionnairesPage() {
   const currentQuestion = hasQuestions ? activeSurveyQuestions[resolvedCurrentIndex] ?? null : null;
   const currentQuestionAnswer = currentQuestion ? questionAnswers[currentQuestion.id] ?? null : null;
   const dialogSubtitle = currentQuestion ? resolveQuestionTitle(currentQuestion, currentLanguage) : undefined;
+  const visibleQuestions = useMemo(
+    () => activeSurveyQuestions.filter((question) => !hiddenQuestionLookup[question.id]),
+    [activeSurveyQuestions, hiddenQuestionLookup],
+  );
+  const totalVisibleQuestions = visibleQuestions.length;
+  const visibleQuestionIds = useMemo(() => visibleQuestions.map((question) => question.id), [visibleQuestions]);
+  const currentVisibleIndex = currentQuestion ? visibleQuestionIds.indexOf(currentQuestion.id) : -1;
+  const resolvedProgressLabel = totalVisibleQuestions > 0 && currentVisibleIndex >= 0
+    ? `${currentVisibleIndex + 1}/${totalVisibleQuestions}`
+    : totalQuestions > 0
+      ? `${resolvedCurrentIndex + 1}/${totalQuestions}`
+      : '';
+  const isLastVisibleStep = totalVisibleQuestions > 0 && currentVisibleIndex >= 0
+    ? currentVisibleIndex >= totalVisibleQuestions - 1
+    : resolvedCurrentIndex >= totalQuestions - 1 && totalQuestions > 0;
+
   const handleGoBack = useCallback(() => {
     clearSubmitAnswerRequest();
     setIsSubmittingAnswer(false);
@@ -817,11 +847,98 @@ export default function QuestionnairesPage() {
       return;
     }
 
-    setCurrentQuestionIndex((previous) => {
-      const nextIndex = previous - 1;
-      return nextIndex <= 0 ? 0 : nextIndex;
-    });
-  }, [clearSubmitAnswerRequest, hasQuestions]);
+    const clampedIndex = clampQuestionIndex(currentQuestionIndex, totalQuestions);
+    let nextIndex = clampedIndex - 1;
+
+    while (nextIndex >= 0) {
+      const candidate = activeSurveyQuestions[nextIndex];
+
+      if (!candidate) {
+        break;
+      }
+
+      if (!hiddenQuestionLookup[candidate.id]) {
+        break;
+      }
+
+      nextIndex -= 1;
+    }
+
+    const resolvedIndex = nextIndex < 0 ? 0 : nextIndex;
+    const targetQuestion = activeSurveyQuestions[resolvedIndex];
+
+    if (targetQuestion) {
+      setHiddenQuestionLookup((previous) => {
+        if (!previous[targetQuestion.id]) {
+          return previous;
+        }
+
+        const nextLookup = { ...previous };
+        delete nextLookup[targetQuestion.id];
+        return nextLookup;
+      });
+    }
+
+    setCurrentQuestionIndex(resolvedIndex);
+  }, [activeSurveyQuestions, clearSubmitAnswerRequest, currentQuestionIndex, hasQuestions, hiddenQuestionLookup, totalQuestions]);
+
+  const resolveNextVisibleQuestionIndex = useCallback(async (
+    params: {
+      startIndex: number;
+      token: string;
+      signal: AbortSignal;
+    },
+  ): Promise<{ nextIndex: number; hiddenQuestionIds: number[] }> => {
+    const { startIndex, token, signal } = params;
+    const total = activeSurveyQuestions.length;
+    const hiddenIds: number[] = [];
+
+    let nextIndex = startIndex + 1;
+
+    if (nextIndex < 0) {
+      nextIndex = 0;
+    }
+
+    if (!token || userSurveyRoundId == null) {
+      return { nextIndex, hiddenQuestionIds: [] };
+    }
+
+    while (nextIndex < total) {
+      const candidate = activeSurveyQuestions[nextIndex];
+
+      if (!candidate) {
+        break;
+      }
+
+      const { displayConditionQuestionId, displayConditionOptionId } = candidate;
+      const normalizedOptionId = typeof displayConditionOptionId === 'string'
+        ? displayConditionOptionId.trim()
+        : displayConditionOptionId;
+      const requiresCheck = Boolean(displayConditionQuestionId)
+        && normalizedOptionId != null
+        && normalizedOptionId !== '';
+
+      if (!requiresCheck) {
+        break;
+      }
+
+      const shouldDisplay = await checkDisplayConditionalQuestion(
+        token,
+        normalizedOptionId,
+        userSurveyRoundId,
+        signal,
+      );
+
+      if (shouldDisplay) {
+        break;
+      }
+
+      hiddenIds.push(candidate.id);
+      nextIndex += 1;
+    }
+
+    return { nextIndex, hiddenQuestionIds: hiddenIds };
+  }, [activeSurveyQuestions, userSurveyRoundId]);
 
   const handleGoNext = useCallback(async () => {
     if (isSubmittingAnswer) {
@@ -867,6 +984,14 @@ export default function QuestionnairesPage() {
       }
     }
 
+    if (normalizedType === 'numeric' && typeof answerValue !== 'number') {
+      return;
+    }
+
+    if (normalizedType === 'numeric' && typeof answerValue === 'number' && Number.isNaN(answerValue)) {
+      return;
+    }
+
     if (normalizedType === 'text' && typeof answerValue !== 'string') {
       return;
     }
@@ -888,7 +1013,9 @@ export default function QuestionnairesPage() {
       ? answerValue.toISOString().split('T')[0]
       : typeof answerValue === 'string'
         ? answerValue
-        : (normalizedType === 'hourandminute' || normalizedType === 'days') && typeof answerValue === 'number'
+        : (normalizedType === 'hourandminute'
+            || normalizedType === 'days'
+            || normalizedType === 'numeric') && typeof answerValue === 'number'
           ? String(answerValue)
           : null;
 
@@ -915,36 +1042,100 @@ export default function QuestionnairesPage() {
         await submitQuestionAnswer(trimmedToken, payload, controller.signal);
       }
 
-      setCurrentQuestionIndex((index) => {
-        const effectiveIndex = clampQuestionIndex(index, totalQuestions);
-        const nextIndex = effectiveIndex + 1;
+      let nextIndex = clampedIndex + 1;
+      let hiddenIds: number[] = [];
 
-        if (nextIndex >= totalQuestions || nextIndex === -1) {
-          if (activeSurveyId) {
-            setLocalSurveyProgress((previous) => (
-              previous[activeSurveyId] === 100
-                ? previous
-                : {
-                    ...previous,
-                    [activeSurveyId]: 100,
-                  }
-            ));
-            setLocalSurveyStatus((previous) => (
-              previous[activeSurveyId] === 'completed'
-                ? previous
-                : {
-                    ...previous,
-                    [activeSurveyId]: 'completed',
-                  }
-            ));
+      if (nextIndex < totalQuestions) {
+        const result = await resolveNextVisibleQuestionIndex({
+          startIndex: clampedIndex,
+          token: trimmedToken,
+          signal: controller.signal,
+        });
+
+        nextIndex = result.nextIndex;
+        hiddenIds = result.hiddenQuestionIds;
+      }
+
+      if (hiddenIds.length) {
+        setHiddenQuestionLookup((previous) => {
+          const nextLookup = { ...previous };
+
+          for (const id of hiddenIds) {
+            nextLookup[id] = true;
           }
 
-          closeSurveyDialog();
-          return effectiveIndex;
+          return nextLookup;
+        });
+      }
+
+      if (nextIndex >= totalQuestions || nextIndex === -1) {
+        if (activeSurveyId) {
+          setLocalSurveyProgress((previous) => (
+            previous[activeSurveyId] === 100
+              ? previous
+              : {
+                  ...previous,
+                  [activeSurveyId]: 100,
+                }
+          ));
+          setLocalSurveyStatus((previous) => (
+            previous[activeSurveyId] === 'completed'
+              ? previous
+              : {
+                  ...previous,
+                  [activeSurveyId]: 'completed',
+                }
+          ));
         }
 
-        return nextIndex;
-      });
+        closeSurveyDialog();
+      } else {
+        const nextQuestion = activeSurveyQuestions[nextIndex];
+
+        if (nextQuestion) {
+          setHiddenQuestionLookup((previous) => {
+            if (!previous[nextQuestion.id]) {
+              return previous;
+            }
+
+            const nextLookup = { ...previous };
+            delete nextLookup[nextQuestion.id];
+            return nextLookup;
+          });
+        }
+
+        setCurrentQuestionIndex(nextIndex);
+      }
+
+      if (activeSurveyId) {
+        const totalVisible = activeSurveyQuestions.length;
+        const answeredVisible = Object.entries(questionAnswers)
+          .filter(([questionId]) => !hiddenQuestionLookup[Number(questionId)])
+          .length;
+
+        const progress = totalVisible > 0
+          ? Math.min(100, Math.round((answeredVisible / totalVisible) * 100))
+          : 100;
+
+        if (progress >= 100) {
+          setLocalSurveyProgress((previous) => (
+            previous[activeSurveyId] === 100
+              ? previous
+              : {
+                  ...previous,
+                  [activeSurveyId]: 100,
+                }
+          ));
+          setLocalSurveyStatus((previous) => (
+            previous[activeSurveyId] === 'completed'
+              ? previous
+              : {
+                  ...previous,
+                  [activeSurveyId]: 'completed',
+                }
+          ));
+        }
+      }
 
       setPersistedAnswerLookup((previous) => (
         previous[question.id]
@@ -981,12 +1172,136 @@ export default function QuestionnairesPage() {
     currentQuestionIndex,
     isSubmittingAnswer,
     questionAnswers,
+    resolveNextVisibleQuestionIndex,
+    setHiddenQuestionLookup,
     setLocalSurveyProgress,
     setLocalSurveyStatus,
     t,
     userSurveyRoundId,
     persistedAnswerLookup,
   ]);
+
+  useEffect(() => {
+    if (!isSurveyDialogOpen) {
+      return;
+    }
+
+    if (!hasQuestions) {
+      return;
+    }
+
+    const trimmedToken = accessToken?.trim() ?? '';
+
+    if (!trimmedToken || userSurveyRoundId == null) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    resolveNextVisibleQuestionIndex({
+      startIndex: resolvedCurrentIndex - 1,
+      token: trimmedToken,
+      signal: controller.signal,
+    })
+      .then(({ nextIndex, hiddenQuestionIds }) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        if (hiddenQuestionIds.length) {
+          setHiddenQuestionLookup((previous) => {
+            const nextLookup = { ...previous };
+
+            for (const id of hiddenQuestionIds) {
+              nextLookup[id] = true;
+            }
+
+            return nextLookup;
+          });
+        }
+
+        if (nextIndex !== resolvedCurrentIndex) {
+          if (nextIndex >= totalQuestions || nextIndex === -1) {
+            if (activeSurveyId) {
+              setLocalSurveyProgress((previous) => (
+                previous[activeSurveyId] === 100
+                  ? previous
+                  : {
+                      ...previous,
+                      [activeSurveyId]: 100,
+                    }
+              ));
+              setLocalSurveyStatus((previous) => (
+                previous[activeSurveyId] === 'completed'
+                  ? previous
+                  : {
+                      ...previous,
+                      [activeSurveyId]: 'completed',
+                    }
+              ));
+            }
+
+            closeSurveyDialog();
+            return;
+          }
+
+          const nextQuestion = activeSurveyQuestions[nextIndex];
+
+          if (nextQuestion) {
+            setHiddenQuestionLookup((previous) => {
+              if (!previous[nextQuestion.id]) {
+                return previous;
+              }
+
+              const nextLookup = { ...previous };
+              delete nextLookup[nextQuestion.id];
+              return nextLookup;
+            });
+          }
+
+          setCurrentQuestionIndex(nextIndex);
+        }
+      })
+      .catch((error) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Failed to resolve conditional question visibility', error);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    accessToken,
+    activeSurveyId,
+    activeSurveyQuestions,
+    closeSurveyDialog,
+    hasQuestions,
+    isSurveyDialogOpen,
+    resolveNextVisibleQuestionIndex,
+    resolvedCurrentIndex,
+    setHiddenQuestionLookup,
+    setLocalSurveyProgress,
+    setLocalSurveyStatus,
+    totalQuestions,
+    userSurveyRoundId,
+  ]);
+
+  useEffect(() => {
+    if (!currentQuestion) {
+      return;
+    }
+
+    setHiddenQuestionLookup((previous) => {
+      if (!previous[currentQuestion.id]) {
+        return previous;
+      }
+
+      const nextLookup = { ...previous };
+      delete nextLookup[currentQuestion.id];
+      return nextLookup;
+    });
+  }, [currentQuestion]);
 
   const handleQuestionAnswerChange = useCallback((questionId: number, value: Date | number | string | null) => {
     setSubmitAnswerError(null);
@@ -1031,6 +1346,7 @@ export default function QuestionnairesPage() {
           normalizedType === 'singlechoice'
           || normalizedType === 'hourandminute'
           || normalizedType === 'days'
+          || normalizedType === 'numeric'
         )) {
           return previous;
         }
@@ -1141,8 +1457,6 @@ export default function QuestionnairesPage() {
   }, [activeSurveyId, activeSurveyQuestions, questionAnswers, persistedAnswerLookup, totalQuestions]);
 
   const dialogActions = useMemo(() => {
-    const progressLabel = totalQuestions > 0 ? `${clampQuestionIndex(currentQuestionIndex, totalQuestions) + 1}/${totalQuestions}` : '';
-
     if (!isSurveyDialogOpen) {
       return null;
     }
@@ -1176,15 +1490,13 @@ export default function QuestionnairesPage() {
       );
     }
 
-    const isLastStep = clampQuestionIndex(currentQuestionIndex, totalQuestions) >= totalQuestions - 1 && totalQuestions > 0;
-
     return (
       <div className="survey-dialog-actions">
         <div className="survey-dialog-actions-button survey-dialog-actions-button-left">
           <Button
             variant="border"
             onClick={handleGoBack}
-            disabled={resolvedCurrentIndex === 0 || isSubmittingAnswer}
+            disabled={currentVisibleIndex <= 0 || isSubmittingAnswer}
           >
             <ArrowLeftIcon width={16} height={16} />
             {dialogBackLabel}
@@ -1192,7 +1504,7 @@ export default function QuestionnairesPage() {
         </div>
 
         <div className="survey-dialog-actions-progress" aria-live="polite">
-          {progressLabel}
+          {resolvedProgressLabel}
         </div>
 
         <div className="survey-dialog-actions-button survey-dialog-actions-button-right">
@@ -1202,7 +1514,7 @@ export default function QuestionnairesPage() {
             disabled={isSubmittingAnswer}
             loading={isSubmittingAnswer}
           >
-            {isLastStep ? dialogCloseLabel : dialogContinueLabel}
+            {isLastVisibleStep ? dialogCloseLabel : dialogContinueLabel}
           </Button>
         </div>
       </div>
@@ -1210,6 +1522,7 @@ export default function QuestionnairesPage() {
   }, [
     closeSurveyDialog,
     currentQuestionIndex,
+    currentVisibleIndex,
     dialogBackLabel,
     dialogCloseLabel,
     dialogContinueLabel,
@@ -1221,8 +1534,9 @@ export default function QuestionnairesPage() {
     isSubmittingAnswer,
     isSurveyDialogLoading,
     isSurveyDialogOpen,
+    isLastVisibleStep,
     surveyDialogError,
-    totalQuestions,
+    resolvedProgressLabel,
   ]);
 
   const dialogTitle = t('dialog.title' as QuestionnairesDialogKey, {

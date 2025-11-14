@@ -26,6 +26,7 @@ const API_PATHS = {
   questionAnswer: '/api/surveys/questions/response',
   getAnswers: '/api/surveys/questions/response',
   editAnswer: '/api/surveys/questions/response',
+  displayConditionalQuestion: '/api/surveys/questions/response/check-option-selected',
 } as const;
 
 const resolveApiUrl = (path: string) => `${API_BASE_URL}${path}`;

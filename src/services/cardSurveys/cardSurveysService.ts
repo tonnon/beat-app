@@ -161,6 +161,74 @@ export async function fetchCardSurveys(token: string, signal?: AbortSignal): Pro
   }
 }
 
+export async function checkDisplayConditionalQuestion(
+  token: string,
+  optionId: number | string,
+  userSurveyRoundId: number | string,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const trimmedToken = token?.trim() ?? '';
+
+  if (!trimmedToken) {
+    throw new ApiError('Authentication token is required to check conditional questions', 'Authentication token is required to check conditional questions');
+  }
+
+  const normalizedOptionId = String(optionId ?? '').trim();
+  const normalizedRoundId = String(userSurveyRoundId ?? '').trim();
+
+  if (!normalizedOptionId || !normalizedRoundId) {
+    throw new ApiError('Both optionId and userSurveyRoundId are required to check conditional questions', 'Both optionId and userSurveyRoundId are required to check conditional questions');
+  }
+
+  const params = new URLSearchParams({
+    OptionId: normalizedOptionId,
+    UserSurveyRoundId: normalizedRoundId,
+  });
+
+  const url = `${resolveApiUrl(API_PATHS.displayConditionalQuestion)}?${params.toString()}`;
+
+  try {
+    const response = await ensureSuccessfulResponse(await fetch(url, {
+      method: 'GET',
+      signal,
+      headers: {
+        Authorization: `Bearer ${trimmedToken}`,
+        Accept: 'application/json',
+      },
+    }));
+
+    const payload = await response.json().catch(() => null);
+
+    if (typeof payload === 'boolean') {
+      return payload;
+    }
+
+    if (payload && typeof payload === 'object') {
+      const candidate = ((payload as { data?: unknown }).data ?? (payload as { value?: unknown }).value) as unknown;
+
+      if (typeof candidate === 'boolean') {
+        return candidate;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      throw new ApiError(error.message, error.message);
+    }
+
+    throw new ApiError('Unknown error occurred while checking conditional question', String(error));
+  }
+}
+
 export async function fetchSurveyWithQuestions(
   surveyId: number | string,
   token: string,

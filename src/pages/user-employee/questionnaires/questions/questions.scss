@@ -31,6 +31,10 @@ $survey-dialog-actions-progress-font-weight: 400;
   gap: $survey-question-step-gap;
 }
 
+.survey-question-step-field {
+  width: 100%;
+}
+
 .survey-question-step-content {
   display: flex;
   flex-direction: column;

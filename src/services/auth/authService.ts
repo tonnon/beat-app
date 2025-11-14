@@ -446,6 +446,7 @@ export interface AuthenticatedUser {
   role: string;
   fullName?: string;
   language?: string | null;
+  hasRequiredQuestionnaireRounds?: boolean;
 }
 
 export interface LanguagePreferencesResponse {

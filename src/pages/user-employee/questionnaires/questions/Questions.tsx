@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import Skeleton from '@/components/skeleton/Skeleton';
 import Textfield from '@/components/textfield/Textfield';
 import SingleChoiceOption from '@/components/single-choice-option/SIngleChoiceOptiion';
+import Slider from '@/components/slider/Slider';
 import Textarea from '@/components/textarea/Textarea';
 import type { SurveyAnswerOption, SurveyAnswerOptionTranslation, SurveyQuestion } from '@/services/cardSurveys/cardSurveysService';
 import { normalizeTranslationText } from '@/hooks/useNormalizedTranslation';
@@ -95,6 +96,104 @@ const resolveSingleChoiceOptions = (question: SurveyQuestion): ReadonlyArray<Sur
   });
 };
 
+const SLIDER_MIN_VALUE = 1;
+const SLIDER_MAX_VALUE = 10;
+const SLIDER_REQUIRED_VALUES = Array.from({ length: SLIDER_MAX_VALUE - SLIDER_MIN_VALUE + 1 }, (_, index) => SLIDER_MIN_VALUE + index);
+
+interface SingleChoiceOptionEntry {
+  readonly option: SurveyAnswerOption;
+  readonly label: string;
+}
+
+interface NumericSliderScale {
+  readonly marks: ReadonlyArray<number>;
+  readonly optionIdByValue: ReadonlyMap<number, number>;
+  readonly valueByOptionId: ReadonlyMap<number, number>;
+}
+
+const resolveNumericSingleChoiceScale = (entries: ReadonlyArray<SingleChoiceOptionEntry>): NumericSliderScale | null => {
+  if (!entries.length) {
+    return null;
+  }
+
+  const numericEntries: Array<{ optionId: number; value: number }> = [];
+
+  for (const { option, label } of entries) {
+    const trimmedLabel = label.trim();
+    let parsedValue: number | null = null;
+
+    if (trimmedLabel) {
+      const numericMatch = trimmedLabel.match(/\d+/);
+
+      if (numericMatch) {
+        const candidate = Number.parseInt(numericMatch[0], 10);
+
+        if (!Number.isNaN(candidate)) {
+          parsedValue = candidate;
+        }
+      }
+    }
+
+    if (parsedValue == null) {
+      const orderIndex = Number.isFinite(option.orderIndex)
+        ? Number(option.orderIndex)
+        : Number.NaN;
+
+      if (!Number.isNaN(orderIndex)) {
+        const normalizedOrder = Math.round(orderIndex);
+
+        if (
+          normalizedOrder >= SLIDER_MIN_VALUE
+          && normalizedOrder <= SLIDER_MAX_VALUE
+          && !numericEntries.some((entry) => entry.value === normalizedOrder)
+        ) {
+          parsedValue = normalizedOrder;
+        }
+      }
+
+      if (parsedValue == null) {
+        const sequentialValue = SLIDER_MIN_VALUE + numericEntries.length;
+
+        if (sequentialValue <= SLIDER_MAX_VALUE) {
+          parsedValue = sequentialValue;
+        }
+      }
+    }
+
+    if (parsedValue == null || Number.isNaN(parsedValue) || parsedValue < SLIDER_MIN_VALUE || parsedValue > SLIDER_MAX_VALUE) {
+      return null;
+    }
+
+    numericEntries.push({ optionId: option.id, value: parsedValue });
+  }
+
+  const optionIdByValue = new Map<number, number>();
+  const valueByOptionId = new Map<number, number>();
+
+  for (const entry of numericEntries) {
+    if (optionIdByValue.has(entry.value)) {
+      return null;
+    }
+
+    optionIdByValue.set(entry.value, entry.optionId);
+    valueByOptionId.set(entry.optionId, entry.value);
+  }
+
+  if (SLIDER_REQUIRED_VALUES.some((value) => !optionIdByValue.has(value))) {
+    return null;
+  }
+
+  if (optionIdByValue.size !== SLIDER_REQUIRED_VALUES.length) {
+    return null;
+  }
+
+  return {
+    marks: SLIDER_REQUIRED_VALUES,
+    optionIdByValue,
+    valueByOptionId,
+  };
+};
+
 export interface SurveyQuestionStepProps {
   readonly question: SurveyQuestion;
   readonly language: string;
@@ -115,6 +214,7 @@ export default function SurveyQuestionStep({
   const isSingleChoiceQuestion = normalizedType === 'singlechoice';
   const isHourAndMinuteQuestion = normalizedType === 'hourandminute';
   const isDaysQuestion = normalizedType === 'days';
+  const isNumericQuestion = normalizedType === 'numeric';
   const handleDateChange = onAnswerChange
     ? (value: Date | null) => onAnswerChange(value)
     : undefined;
@@ -133,9 +233,12 @@ export default function SurveyQuestionStep({
   const daysValue = daysAnswer != null
     ? String(daysAnswer)
     : '';
-  const singleChoiceOptions = isSingleChoiceQuestion
-    ? resolveSingleChoiceOptions(question)
-    : [];
+  const numericAnswer = isNumericQuestion && typeof answerValue === 'number'
+    ? answerValue
+    : null;
+  const numericValue = numericAnswer != null
+    ? String(numericAnswer)
+    : '';
   const languageCandidates = useMemo(() => {
     const inputs = [
       ...(languageFallbacks ?? []),
@@ -164,6 +267,27 @@ export default function SurveyQuestionStep({
 
     return candidates.length ? candidates : [language];
   }, [language, languageFallbacks, question]);
+
+  const singleChoiceOptionEntries = useMemo<ReadonlyArray<SingleChoiceOptionEntry>>(() => {
+    if (!isSingleChoiceQuestion) {
+      return [];
+    }
+
+    const options = resolveSingleChoiceOptions(question);
+
+    return options.map((option) => ({
+      option,
+      label: resolveSingleChoiceOptionLabel(option, languageCandidates),
+    }));
+  }, [isSingleChoiceQuestion, languageCandidates, question]);
+
+  const numericSliderScale = useMemo(() => (
+    isSingleChoiceQuestion ? resolveNumericSingleChoiceScale(singleChoiceOptionEntries) : null
+  ), [isSingleChoiceQuestion, singleChoiceOptionEntries]);
+
+  const numericSliderValue = numericSliderScale && singleChoiceAnswer != null
+    ? numericSliderScale.valueByOptionId.get(singleChoiceAnswer) ?? null
+    : null;
 
   const questionTranslation = useMemo(() => {
     for (const candidate of languageCandidates) {
@@ -206,6 +330,39 @@ export default function SurveyQuestionStep({
             description={helpText || undefined}
             value={textAnswerValue}
             onChange={(event) => onAnswerChange?.(event.currentTarget.value)}
+          />
+        </div>
+      ) : null}
+      {isNumericQuestion ? (
+        <div className="survey-question-step-field">
+          <Textfield
+            id={`survey-question-${question.id}-numeric`}
+            label={questionTitle || pretitle || undefined}
+            description={helpText || undefined}
+            type="number"
+            inputMode="decimal"
+            step="any"
+            value={numericValue}
+            onChange={(event) => {
+              if (!onAnswerChange) {
+                return;
+              }
+
+              const rawValue = event.currentTarget.value;
+
+              if (!rawValue) {
+                onAnswerChange(null);
+                return;
+              }
+
+              const parsed = Number.parseFloat(rawValue);
+
+              if (Number.isNaN(parsed)) {
+                return;
+              }
+
+              onAnswerChange(parsed);
+            }}
           />
         </div>
       ) : null}
@@ -294,12 +451,35 @@ export default function SurveyQuestionStep({
           />
         </div>
       ) : null}
-      {isSingleChoiceQuestion && singleChoiceOptions.length ? (
+      {isSingleChoiceQuestion && numericSliderScale ? (
+        <div className="survey-question-step-field">
+          <Slider
+            id={`survey-question-${question.id}-slider`}
+            min={numericSliderScale.marks[0]}
+            max={numericSliderScale.marks[numericSliderScale.marks.length - 1]}
+            step={1}
+            marks={numericSliderScale.marks}
+            value={numericSliderValue}
+            label={questionTitle || pretitle || undefined}
+            showLabel={false}
+            onChange={(nextValue) => {
+              if (!onAnswerChange) {
+                return;
+              }
+
+              const optionId = numericSliderScale.optionIdByValue.get(nextValue) ?? null;
+
+              if (optionId != null) {
+                onAnswerChange(optionId);
+              }
+            }}
+          />
+        </div>
+      ) : null}
+      {isSingleChoiceQuestion && !numericSliderScale && singleChoiceOptionEntries.length ? (
         <div className="survey-question-step-options-wrapper">
           <ul className="survey-question-step-options">
-            {singleChoiceOptions.map((option) => {
-              const label = resolveSingleChoiceOptionLabel(option, languageCandidates);
-
+            {singleChoiceOptionEntries.map(({ option, label }) => {
               if (!label) {
                 return null;
               }
