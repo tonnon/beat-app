@@ -47,7 +47,9 @@ export default function BottomNavLayout({ items, pageClassName }: BottomNavLayou
       const restrictedRoutes = [questionnaireRoute, practiceRoute]
         .filter((route): route is string => Boolean(route));
 
-      return baseItems.filter((item) => restrictedRoutes.includes(item.route));
+      return baseItems.filter((item) => (
+        typeof item.route === 'string' && restrictedRoutes.includes(item.route)
+      ));
     },
     [baseItems, hasRequiredQuestionnaireRounds, practiceRoute, questionnaireRoute],
   );

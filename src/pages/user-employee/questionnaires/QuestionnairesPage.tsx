@@ -1177,7 +1177,9 @@ export default function QuestionnairesPage() {
     setLocalSurveyProgress,
     setLocalSurveyStatus,
     t,
+    totalQuestions,
     userSurveyRoundId,
+    hiddenQuestionLookup,
     persistedAnswerLookup,
   ]);
 
@@ -1521,7 +1523,6 @@ export default function QuestionnairesPage() {
     );
   }, [
     closeSurveyDialog,
-    currentQuestionIndex,
     currentVisibleIndex,
     dialogBackLabel,
     dialogCloseLabel,
