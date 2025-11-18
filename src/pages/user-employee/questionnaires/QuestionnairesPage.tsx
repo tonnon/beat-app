@@ -14,6 +14,7 @@ import Button from '@/components/button/Button';
 import Warning from '@/components/warning/Warning';
 import { ArrowLeftIcon } from '@/components/icons/Icons';
 import SurveyQuestionStep, { SurveyQuestionSkeleton } from './questions/Questions';
+import DialogCelebration, { DialogCelebrationConfetti } from '@/components/dialog-celebration/DialogCelebration';
 import useNormalizedTranslation from '@/hooks/useNormalizedTranslation';
 import {
   fetchCardSurveys,
@@ -23,6 +24,7 @@ import {
   submitQuestionAnswer,
   updateQuestionAnswer,
 } from '@/services/cardSurveys/cardSurveysService';
+import { getAuthenticatedUser } from '@/services/auth/authService';
 import type {
   CardSurvey,
   CardSurveyTranslation,
@@ -77,6 +79,8 @@ const getStatusTranslationKey = (status: CardStatus): QuestionnaireStatusKey =>
 
 const getFilterTranslationKey = (status: StatusFilterValue): QuestionnaireFilterKey =>
   status === 'all' ? 'filters.all' : FILTER_TRANSLATION_KEYS[status];
+
+const CELEBRATION_STORAGE_KEY = 'questionnaires.hasSeenCelebration';
 
 const STATUS_ORDER = ['all', 'completed', 'in_progress', 'not_started'] as const satisfies ReadonlyArray<StatusFilterValue>;
 
@@ -242,10 +246,11 @@ const clampQuestionIndex = (index: number, total: number): number => {
 };
 
 export default function QuestionnairesPage() {
-  const { t, i18n } = useTranslation(['questionnaires', 'common']);
+  const { t, i18n } = useTranslation(['questionnaires', 'common', 'auth']);
   const normalizeTranslation = useNormalizedTranslation();
   const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
   const accessToken = useAuthStore((state) => state.accessToken);
+  const setUser = useAuthStore((state) => state.setUser);
   const userPreferredLanguage = useAuthStore((state) => state.user?.language ?? null);
   const lastFetchedTokenRef = useRef<string | null>(null);
   const hasSkippedStrictModeEffectRef = useRef(false);
@@ -274,6 +279,21 @@ export default function QuestionnairesPage() {
   const [tabValue, setTabValue] = useState<string>('t0');
   const [localSurveyProgress, setLocalSurveyProgress] = useState<Record<string, number>>({});
   const [localSurveyStatus, setLocalSurveyStatus] = useState<Record<string, CardStatus>>({});
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
+  const [isCelebrationFetchingUser, setIsCelebrationFetchingUser] = useState(false);
+  const [hasSeenCelebration, setHasSeenCelebration] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    try {
+      return window.localStorage.getItem(CELEBRATION_STORAGE_KEY) === 'true';
+    } catch (error) {
+      console.warn('Failed to read celebration flag from storage', error);
+      return false;
+    }
+  });
+  const hasShownCelebrationRef = useRef(hasSeenCelebration);
   const questionLanguageFallbacks = useMemo(() => {
     const seen = new Set<string>();
     const result: string[] = [];
@@ -490,7 +510,7 @@ export default function QuestionnairesPage() {
             if (parsedDate) {
               accumulator[answer.questionId] = parsedDate;
             }
-          } else if (normalizedType === 'singlechoice') {
+          } else if (normalizedType === 'singlechoice' || normalizedType === 'ratingscale') {
             const optionId = typeof answer.answerOptionId === 'number' && Number.isFinite(answer.answerOptionId)
               ? answer.answerOptionId
               : null;
@@ -530,10 +550,60 @@ export default function QuestionnairesPage() {
           return accumulator;
         }, {});
 
-        const firstUnansweredIndex = sortedQuestions.findIndex((question) => !answeredQuestionIds.has(question.id));
-        const preferredIndex = firstUnansweredIndex === -1
-          ? Math.max(sortedQuestions.length - 1, 0)
-          : firstUnansweredIndex;
+        const normalizeConditionValue = (value: unknown): string => {
+          if (value == null) {
+            return '';
+          }
+
+          if (value instanceof Date) {
+            return value.toISOString();
+          }
+
+          return String(value).trim();
+        };
+
+        const initialHiddenLookup = sortedQuestions.reduce<Record<number, true>>((accumulator, question) => {
+          const { displayConditionQuestionId, displayConditionOptionId } = question;
+
+          if (!displayConditionQuestionId) {
+            return accumulator;
+          }
+
+          const requiredValue = normalizeConditionValue(displayConditionOptionId);
+
+          if (!requiredValue) {
+            return accumulator;
+          }
+
+          const sourceAnswer = nextQuestionAnswers[displayConditionQuestionId] ?? null;
+          const resolvedAnswer = normalizeConditionValue(sourceAnswer);
+
+          if (resolvedAnswer !== requiredValue) {
+            accumulator[question.id] = true;
+          }
+
+          return accumulator;
+        }, {});
+
+        const firstUnansweredVisibleIndex = sortedQuestions.findIndex((question) => (
+          !initialHiddenLookup[question.id]
+          && !answeredQuestionIds.has(question.id)
+        ));
+        const lastVisibleIndex = (() => {
+          for (let index = sortedQuestions.length - 1; index >= 0; index -= 1) {
+            const candidate = sortedQuestions[index];
+
+            if (candidate && !initialHiddenLookup[candidate.id]) {
+              return index;
+            }
+          }
+
+          return 0;
+        })();
+
+        const preferredIndex = firstUnansweredVisibleIndex === -1
+          ? Math.max(lastVisibleIndex, 0)
+          : firstUnansweredVisibleIndex;
         const resolvedInitialIndex = clampQuestionIndex(preferredIndex, sortedQuestions.length);
 
         setActiveSurveyData(data);
@@ -547,7 +617,7 @@ export default function QuestionnairesPage() {
           });
           return lookup;
         });
-        setHiddenQuestionLookup({});
+        setHiddenQuestionLookup(initialHiddenLookup);
         setCurrentQuestionIndex(resolvedInitialIndex === -1 ? 0 : resolvedInitialIndex);
       })
       .catch((error: unknown) => {
@@ -751,6 +821,24 @@ export default function QuestionnairesPage() {
     [questionnaireCards, statusFilter],
   );
 
+  const allQuestionnairesCompleted = useMemo(() => {
+    if (!surveys.length) {
+      return false;
+    }
+
+    return surveys.every((survey) => {
+      const surveyId = String(survey.id);
+      const localProgress = localSurveyProgress[surveyId];
+
+      if (typeof localProgress === 'number' && localProgress >= 100) {
+        return true;
+      }
+
+      const remoteProgress = clampProgress(survey.completionPercentage);
+      return remoteProgress >= 100;
+    });
+  }, [localSurveyProgress, surveys]);
+
   const dropdownItems = useMemo<DropdownItem[]>(() =>
     STATUS_ORDER.map((value) => {
       const label = filterLabels.get(value) ?? '';
@@ -815,6 +903,95 @@ export default function QuestionnairesPage() {
   const dialogCloseLabel = t('actions.close' as QuestionnaireActionKey);
   const dialogRetryLabel = t('actions.retry' as QuestionnaireActionKey);
   const dialogErrorMessage = surveyDialogError ?? t('dialog.error' as QuestionnairesDialogKey);
+  const celebrationContent = useMemo(() => (
+    t('celebrationDialog', { ns: 'auth', returnObjects: true }) as { title: string; body: string }
+  ), [t]);
+
+  useEffect(() => {
+    if (isFetching) {
+      return;
+    }
+
+    if (!allQuestionnairesCompleted) {
+      hasShownCelebrationRef.current = false;
+      setHasSeenCelebration(false);
+      setIsCelebrationFetchingUser(false);
+
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.removeItem(CELEBRATION_STORAGE_KEY);
+        } catch (error) {
+          console.warn('Failed to clear celebration flag from storage', error);
+        }
+      }
+
+      if (isCelebrationOpen) {
+        setIsCelebrationOpen(false);
+      }
+
+      return;
+    }
+
+    if (hasSeenCelebration) {
+      if (!isCelebrationOpen && !hasShownCelebrationRef.current) {
+        hasShownCelebrationRef.current = true;
+        setIsCelebrationOpen(true);
+      }
+
+      return;
+    }
+
+    if (hasShownCelebrationRef.current) {
+      return;
+    }
+
+    hasShownCelebrationRef.current = true;
+    setHasSeenCelebration(true);
+    setIsCelebrationOpen(true);
+  }, [allQuestionnairesCompleted, hasSeenCelebration, isCelebrationOpen, isFetching]);
+
+  useEffect(() => {
+    if (!hasSeenCelebration) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(CELEBRATION_STORAGE_KEY, 'true');
+    } catch (error) {
+      console.warn('Failed to persist celebration flag in storage', error);
+    }
+  }, [hasSeenCelebration]);
+
+  const handleCelebrationClose = useCallback(() => {
+    if (isCelebrationFetchingUser) {
+      return;
+    }
+
+    const token = accessToken?.trim();
+
+    if (!token) {
+      setIsCelebrationOpen(false);
+      return;
+    }
+
+    setIsCelebrationFetchingUser(true);
+
+    getAuthenticatedUser(token)
+      .then((user) => {
+        setUser(user);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch authenticated user after completing questionnaires', error);
+      })
+      .finally(() => {
+        setIsCelebrationFetchingUser(false);
+        setIsCelebrationOpen(false);
+      });
+  }, [accessToken, isCelebrationFetchingUser, setUser]);
 
   const totalQuestions = activeSurveyQuestions.length;
   const hasQuestions = totalQuestions > 0;
@@ -964,6 +1141,10 @@ export default function QuestionnairesPage() {
       return;
     }
 
+    if (normalizedType === 'ratingscale' && typeof answerValue !== 'number') {
+      return;
+    }
+
     if (normalizedType === 'hourandminute') {
       if (typeof answerValue !== 'number') {
         return;
@@ -1008,6 +1189,8 @@ export default function QuestionnairesPage() {
 
     const answerOptionId = normalizedType === 'singlechoice' && typeof answerValue === 'number'
       ? answerValue
+      : normalizedType === 'ratingscale' && typeof answerValue === 'number'
+        ? answerValue
       : null;
     const responseText = answerValue instanceof Date
       ? answerValue.toISOString().split('T')[0]
@@ -1349,6 +1532,7 @@ export default function QuestionnairesPage() {
           || normalizedType === 'hourandminute'
           || normalizedType === 'days'
           || normalizedType === 'numeric'
+          || normalizedType === 'ratingscale'
         )) {
           return previous;
         }
@@ -1434,7 +1618,7 @@ export default function QuestionnairesPage() {
     setLocalSurveyProgress((previous) => {
       const current = previous[activeSurveyId];
 
-      if (current === nextProgress) {
+      if (typeof current === 'number' && current >= nextProgress) {
         return previous;
       }
 
@@ -1447,7 +1631,7 @@ export default function QuestionnairesPage() {
     setLocalSurveyStatus((previous) => {
       const current = previous[activeSurveyId];
 
-      if (current === nextStatus) {
+      if (current === 'completed' || current === nextStatus) {
         return previous;
       }
 
@@ -1641,6 +1825,36 @@ export default function QuestionnairesPage() {
           {dialogBody}
         </Dialog>
       </div>
+
+      <Dialog
+        isOpen={isCelebrationOpen}
+        onOpenChange={(open) => {
+          if (!open && !isCelebrationFetchingUser) {
+            setIsCelebrationOpen(false);
+          }
+        }}
+        title=""
+        subtitle=""
+        hideHeader
+        accessibilityTitle={celebrationContent.title}
+        accessibilityDescription={celebrationContent.body}
+        decorations={<DialogCelebrationConfetti />}
+        actions={(
+          <Button
+            variant="solid"
+            size="md"
+            text="Cerrar"
+            onClick={handleCelebrationClose}
+            loading={isCelebrationFetchingUser}
+            disabled={isCelebrationFetchingUser}
+          />
+        )}
+      >
+        <DialogCelebration
+          title={celebrationContent.title}
+          description={celebrationContent.body}
+        />
+      </Dialog>
     </>
   );
 }

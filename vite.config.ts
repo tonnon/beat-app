@@ -5,6 +5,8 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const API_PROXY_TARGET = process.env.VITE_API_BASE_URL ?? 'https://api-beatapp.oleandrosantos.me';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -15,7 +17,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://api-beatapp.oleandrosantos.me',
+        target: API_PROXY_TARGET,
         changeOrigin: true,
         secure: false,
       },

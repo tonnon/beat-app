@@ -7,12 +7,14 @@ interface AuthState {
   readonly refreshToken: string | null;
   readonly user: AuthenticatedUser | null;
   readonly isAuthenticated: boolean;
+  readonly sessionExpiredDialogOpen: boolean;
   readonly setAccessToken: (token: string | null) => void;
   readonly setRefreshToken: (token: string | null) => void;
   readonly setUser: (user: AuthenticatedUser | null) => void;
   readonly updateUserLanguage: (language: string | null) => void;
   readonly authenticate: (session: { accessToken: string; refreshToken: string | null; user: AuthenticatedUser }) => void;
   readonly logout: () => void;
+  readonly setSessionExpiredDialogOpen: (open: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       isAuthenticated: false,
+      sessionExpiredDialogOpen: false,
       setAccessToken: (token) => set((state) => ({
         accessToken: token,
         isAuthenticated: Boolean(token && state.user),
@@ -39,12 +42,17 @@ export const useAuthStore = create<AuthState>()(
         refreshToken,
         user,
         isAuthenticated: true,
+        sessionExpiredDialogOpen: false,
       }),
       logout: () => set({
         accessToken: null,
         refreshToken: null,
         user: null,
         isAuthenticated: false,
+        sessionExpiredDialogOpen: false,
+      }),
+      setSessionExpiredDialogOpen: (open) => set({
+        sessionExpiredDialogOpen: open,
       }),
     }),
     {

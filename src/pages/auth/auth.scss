@@ -3,7 +3,6 @@ $auth-fields-gap: 1.25rem;
 $auth-form-gap: 0;
 $auth-agreements-gap: 0.75rem;
 $auth-agreements-margin-top: 1rem;
-$auth-agreements-padding-bottom: 0.5rem;
 $auth-field-gap: 0.5rem;
 $auth-label-font-size: 0.95rem;
 $auth-label-font-weight: 600;
@@ -49,7 +48,6 @@ $auth-mobile-container-gap: 1.25rem;
   flex-direction: column;
   gap: $auth-agreements-gap;
   margin-top: $auth-agreements-margin-top;
-  padding-bottom: $auth-agreements-padding-bottom;
   width: 100%;
 }
 

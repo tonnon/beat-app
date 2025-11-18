@@ -24,7 +24,6 @@ $informed-consent-paragraph-color: rgba($color-neutral-900, 0.85);
 $informed-consent-paragraph-mobile-font-size: 0.95rem;
 $informed-consent-paragraph-mobile-line-height: 1.6;
 $informed-consent-footer-width: 100%;
-$informed-consent-footer-margin-bottom: 1.5rem;
 $informed-consent-footer-mobile-margin-bottom: 1rem;
 $informed-consent-confirm-margin-top: 0.5rem;
 
@@ -104,7 +103,6 @@ $informed-consent-confirm-margin-top: 0.5rem;
   flex-direction: column;
   gap: $informed-consent-gap-large;
   width: $informed-consent-footer-width;
-  margin-bottom: $informed-consent-footer-margin-bottom;
   position: relative;
   z-index: 1;
 

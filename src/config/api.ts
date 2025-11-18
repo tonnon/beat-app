@@ -1,14 +1,10 @@
-const isDevEnvironment = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
-
-const DEFAULT_API_BASE_URL = isDevEnvironment ? '' : 'https://api-beatapp.oleandrosantos.me';
+const DEFAULT_API_BASE_URL = 'https://api-beatapp.oleandrosantos.me';
 
 const runtimeBaseUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
   ? String(import.meta.env.VITE_API_BASE_URL).trim()
-  : undefined;
+  : '';
 
-const API_BASE_URL = runtimeBaseUrl && runtimeBaseUrl.length > 0
-  ? runtimeBaseUrl
-  : DEFAULT_API_BASE_URL;
+const API_BASE_URL = runtimeBaseUrl.length > 0 ? runtimeBaseUrl : DEFAULT_API_BASE_URL;
 
 const API_PATHS = {
   avaibleLanguages: '/api/users/available-languages',

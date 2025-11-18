@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import type { ChangeEvent, ClipboardEvent, FormEvent, MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent, ClipboardEvent, FormEvent, MouseEvent, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import Checkbox from '@/components/checkbox/Checkbox';
@@ -30,6 +30,8 @@ type InformedConsentFooterProps = {
   readonly onFullNameChange: (value: string) => void;
   readonly onDniChange: (value: string) => void;
   readonly onBirthDateChange: (value: Date | null) => void;
+  readonly renderLayout?: (slots: { form: ReactNode; buttons: ReactNode }) => ReactNode;
+  readonly onFormChange?: (form: ReactNode | null) => void;
 };
 
 export function InformedConsentFooter({
@@ -49,6 +51,8 @@ export function InformedConsentFooter({
   onFullNameChange,
   onDniChange,
   onBirthDateChange,
+  renderLayout,
+  onFormChange,
 }: InformedConsentFooterProps) {
   const { t } = useTranslation<'auth'>('auth');
   const { translateApiError } = useApiErrorTranslation();
@@ -56,7 +60,9 @@ export function InformedConsentFooter({
   const [error, setError] = useState<string | null>(null);
   
   const ICON_SIZE = 18;
-  const backIcon = <ArrowLeftIcon width={ICON_SIZE} height={ICON_SIZE} />;
+  const backIcon = useMemo(() => (
+    <ArrowLeftIcon width={ICON_SIZE} height={ICON_SIZE} />
+  ), [ICON_SIZE]);
 
   const {
     mutateAsync: registerUserAsync,
@@ -210,75 +216,121 @@ export function InformedConsentFooter({
     );
   }, [handleConsentLinkClick, renderImportantLinkLabel, t]);
 
+  const formContent = useMemo(() => (
+    <form id={formId} className="informed-consent-footer" onSubmit={handleSubmit}>
+      <Textfield
+        id="informed-consent-name"
+        label={t('informedConsent.nameField.label')}
+        placeholder={t('informedConsent.nameField.placeholder')}
+        wrapperClassName="informed-consent-name-field"
+        pattern="[A-Za-zÀ-ÖØ-öø-ÿ''\-\s]+"
+        onBeforeInput={handleNameBeforeInput}
+        onPaste={handleNamePaste}
+        required
+        value={fullName}
+        onChange={handleFullNameInputChange}
+      />
+      <Textfield
+        id="informed-consent-dni"
+        label={t('informedConsent.dniField.label')}
+        placeholder={t('informedConsent.dniField.placeholder')}
+        wrapperClassName="informed-consent-dni-field"
+        maxLength={9}
+        required
+        value={dni}
+        onChange={handleDniInputChange}
+      />
+      <Textfield
+        variant="date-picker"
+        id="informed-consent-birthdate"
+        label={t('informedConsent.birthdateField.label')}
+        placeholder={t('informedConsent.birthdateField.placeholder')}
+        wrapperClassName="informed-consent-birthdate-field"
+        name="birthdate"
+        value={birthDate}
+        onDateChange={handleBirthDateChange}
+      />
+      <Tooltip content={readingRequiredTooltipMessage} delayDuration={0}>
+        <Checkbox
+          wrapperClassName="informed-consent-checkbox"
+          label={checkboxLabel}
+          checked={readingCompleted}
+          disabled
+          required
+        />
+      </Tooltip>
+      {error && <Warning message={error} variant="error" />}
+    </form>
+  ), [
+    formId,
+    handleBirthDateChange,
+    handleDniInputChange,
+    handleFullNameInputChange,
+    handleNameBeforeInput,
+    handleNamePaste,
+    readingCompleted,
+    checkboxLabel,
+    readingRequiredTooltipMessage,
+    birthDate,
+    dni,
+    error,
+    fullName,
+    t,
+    handleSubmit,
+  ]);
+
+  const buttonsContent = useMemo(() => (
+    <>
+      <Button
+        variant="border"
+        size="md"
+        text={t('back')}
+        className="dialog-actions-secondary"
+        type="button"
+        onClick={onBack}
+        icon={backIcon}
+        iconPosition="left"
+        disabled={isSubmitting}
+        animateOnEnable={animateBackButton}
+      />
+      <Button
+        variant="solid"
+        size="md"
+        text={t('informedConsent.confirm')}
+        className="dialog-actions-primary"
+        type="submit"
+        form={formId}
+        loading={isSubmitting || isRegisterPending}
+        disabled={isSubmitting || isRegisterPending || !readingCompleted}
+      />
+    </>
+  ), [
+    animateBackButton,
+    formId,
+    isRegisterPending,
+    isSubmitting,
+    onBack,
+    readingCompleted,
+    t,
+    backIcon,
+  ]);
+
+  useEffect(() => {
+    onFormChange?.(formContent);
+    return () => {
+      onFormChange?.(null);
+    };
+  }, [formContent, onFormChange]);
+
+  if (renderLayout) {
+    return renderLayout({ form: formContent, buttons: buttonsContent });
+  }
+
   return (
     <div className="dialog-actions-content dialog-actions-content--align-start">
-      <form id={formId} className="informed-consent-footer" onSubmit={handleSubmit}>
-        <Textfield
-          id="informed-consent-name"
-          label={t('informedConsent.nameField.label')}
-          placeholder={t('informedConsent.nameField.placeholder')}
-          wrapperClassName="informed-consent-name-field"
-          pattern="[A-Za-zÀ-ÖØ-öø-ÿ''\-\s]+"
-          onBeforeInput={handleNameBeforeInput}
-          onPaste={handleNamePaste}
-          required
-          value={fullName}
-          onChange={handleFullNameInputChange}
-        />
-        <Textfield
-          id="informed-consent-dni"
-          label={t('informedConsent.dniField.label')}
-          placeholder={t('informedConsent.dniField.placeholder')}
-          wrapperClassName="informed-consent-dni-field"
-          maxLength={9}
-          required
-          value={dni}
-          onChange={handleDniInputChange}
-        />
-        <Textfield
-          variant="date-picker"
-          id="informed-consent-birthdate"
-          label={t('informedConsent.birthdateField.label')}
-          placeholder={t('informedConsent.birthdateField.placeholder')}
-          wrapperClassName="informed-consent-birthdate-field"
-          name="birthdate"
-          value={birthDate}
-          onDateChange={handleBirthDateChange}
-        />
-        <Tooltip content={readingRequiredTooltipMessage} delayDuration={0}>
-          <Checkbox
-            wrapperClassName="informed-consent-checkbox"
-            label={checkboxLabel}
-            checked={readingCompleted}
-            disabled
-            required
-          />
-        </Tooltip>
-        {error && <Warning message={error} variant="error" />}
-      </form>
+      {formContent}
       <div className="dialog-actions-buttons dialog-actions-buttons--align-start">
-        <Button
-          variant="border"
-          size="md"
-          text={t('back')}
-          className="dialog-actions-secondary"
-          type="button"
-          onClick={onBack}
-          icon={backIcon}
-          iconPosition="left"
-          disabled={isSubmitting || !readingCompleted}
-          animateOnEnable={animateBackButton}
-        />
-        <Button
-          variant="solid"
-          size="md"
-          text={t('informedConsent.confirm')}
-          className="dialog-actions-primary"
-          type="submit"
-          form={formId}
-          loading={isSubmitting || isRegisterPending}
-          disabled={isSubmitting || isRegisterPending || !readingCompleted}
-        />
+        {buttonsContent}
       </div>
     </div>
   );

@@ -62,6 +62,7 @@ export default function Auth() {
   const [consentFullName, setConsentFullName] = useState('');
   const [consentDni, setConsentDni] = useState('');
   const [consentBirthDate, setConsentBirthDate] = useState<Date | null>(null);
+  const [informedConsentBody, setInformedConsentBody] = useState<ReactNode | null>(null);
   const dialogBodyRef = useRef<HTMLDivElement | null>(null);
   const documentCompletionRef = useRef({
     terms: false,
@@ -442,15 +443,20 @@ export default function Auth() {
     }
   }, [isOpen, view, termsDocumentCompleted, privacyDocumentCompleted, resetScrollProgress]);
 
-  const dialogActions = useMemo<ReactNode>(() => {
+  const { dialogActions, dialogBodyOverride } = useMemo<{
+    dialogActions: ReactNode;
+    dialogBodyOverride: ReactNode | null;
+  }>(() => {
     const backIcon = <ArrowLeftIcon size={ICON_SIZE} />;
     const isTermsRead = termsDocumentCompleted;
     const isPrivacyRead = privacyDocumentCompleted;
     const isConsentTextRead = consentTextCompleted;
+    let bodyOverride: ReactNode | null = null;
 
-    switch (view) {
-      case 'forgotPassword':
-        return renderActionsWrapper(
+    const actions = (() => {
+      switch (view) {
+        case 'forgotPassword':
+          return renderActionsWrapper(
           <>
             <Button
               variant="border"
@@ -476,8 +482,8 @@ export default function Auth() {
           </>
         );
 
-      case 'signup':
-        return renderActionsWrapper(
+        case 'signup':
+          return renderActionsWrapper(
           <>
             <Button
               variant="border"
@@ -503,8 +509,8 @@ export default function Auth() {
           </>
         );
 
-      case 'termsOfUse':
-        return renderActionsWrapper(
+        case 'termsOfUse':
+          return renderActionsWrapper(
           <Button
             variant="border"
             size="md"
@@ -520,8 +526,8 @@ export default function Auth() {
           { contentAlign: 'start', buttonsAlign: 'start' }
         );
 
-      case 'privacyPolicy':
-        return renderActionsWrapper(
+        case 'privacyPolicy':
+          return renderActionsWrapper(
           <Button
             variant="border"
             size="md"
@@ -537,8 +543,8 @@ export default function Auth() {
           { contentAlign: 'start', buttonsAlign: 'start' }
         );
 
-      case 'informedConsent':
-        return (
+        case 'informedConsent':
+          return renderActionsWrapper(
           <InformedConsentFooter
             formId={formId}
             userId={userId}
@@ -552,17 +558,37 @@ export default function Auth() {
             fullName={consentFullName}
             dni={consentDni}
             birthDate={consentBirthDate}
-            onFullNameChange={(value) => setConsentFullName(value)}
-            onDniChange={(value) => setConsentDni(value)}
-            onBirthDateChange={(value) => setConsentBirthDate(value)}
-          />
+            onFullNameChange={setConsentFullName}
+            onDniChange={setConsentDni}
+            onBirthDateChange={setConsentBirthDate}
+            renderLayout={({ form, buttons }) => {
+              bodyOverride = form;
+              return (
+                <div className="dialog-actions-buttons dialog-actions-buttons--align-start">
+                  {buttons}
+                </div>
+              );
+            }}
+            onFormChange={setInformedConsentBody}
+          />,
+          { contentAlign: 'start', buttonsAlign: 'start' }
         );
 
-      case 'confirmEmail':
-        return null;
+        case 'confirmEmail':
+          return renderActionsWrapper(
+            <Button
+              variant="border"
+              size="md"
+              text={t('confirmEmail.cta.backToLogin')}
+              className="dialog-actions-secondary"
+              type="button"
+              onClick={handleBackToLogin}
+            />,
+            { contentAlign: 'end', buttonsAlign: 'end' }
+          );
 
-      case 'informedConsentText':
-        return renderActionsWrapper(
+        case 'informedConsentText':
+          return renderActionsWrapper(
           <Button
             variant="border"
             size="md"
@@ -578,9 +604,9 @@ export default function Auth() {
           { contentAlign: 'start', buttonsAlign: 'start' }
         );
 
-      case 'signupSuccess':
-      case 'confirmEmailSuccess':
-        return renderActionsWrapper(
+        case 'signupSuccess':
+        case 'confirmEmailSuccess':
+          return renderActionsWrapper(
           <Button
             variant="solid"
             size="md"
@@ -592,8 +618,8 @@ export default function Auth() {
           { contentAlign: 'end', buttonsAlign: 'end' }
         );
 
-      default:
-        return renderActionsWrapper(
+        default:
+          return renderActionsWrapper(
           <>
             <Button
               variant="border"
@@ -622,7 +648,13 @@ export default function Auth() {
             ),
           }
         );
-    }
+      }
+    })();
+
+    return {
+      dialogActions: actions,
+      dialogBodyOverride: bodyOverride,
+    };
   }, [
     forgotSubmitting,
     formId,
@@ -637,11 +669,7 @@ export default function Auth() {
     loginSubmitting,
     renderActionsWrapper,
     privacyDocumentCompleted,
-    consentBirthDate,
-    consentDni,
-    consentFullName,
     consentTextCompleted,
-    readingCompleted,
     signupPrivacyAccepted,
     signupSubmitting,
     signupTermsAccepted,
@@ -651,6 +679,145 @@ export default function Auth() {
     view,
     registrationPayload,
     handleUserRegistered,
+    consentBirthDate,
+    consentDni,
+    consentFullName,
+    readingCompleted,
+  ]);
+
+  const dialogContent = useMemo<ReactNode>(() => {
+    if (dialogBodyOverride) {
+      return dialogBodyOverride;
+    }
+
+    if (view === 'signup') {
+      return (
+        <Singup
+          formId={formId}
+          initialEmail={signupEmail}
+          initialInviteCode={inviteCode}
+          initialPassword={signupPassword}
+          initialConfirmPassword={signupConfirmPassword}
+          initialError={signupError}
+          initialRawError={signupRawError}
+          onEmailChange={handleSignupEmailChange}
+          onInviteCodeChange={handleInviteCodeChange}
+          onPasswordChange={handleSignupPasswordChange}
+          onConfirmPasswordChange={handleSignupConfirmPasswordChange}
+          onErrorChange={handleSignupErrorChange}
+          onRawErrorChange={handleSignupRawErrorChange}
+          onSubmittingChange={handleSignupSubmittingChange}
+          onShowTerms={handleShowTerms}
+          onShowPrivacy={handleShowPrivacy}
+          termsAccepted={signupTermsAccepted}
+          privacyAccepted={signupPrivacyAccepted}
+          onTermsAcceptedChange={handleSignupTermsAcceptedChange}
+          onPrivacyAcceptedChange={handleSignupPrivacyAcceptedChange}
+          onContinueToInformedConsent={handleContinueToInformedConsent}
+          onRegistrationDataReady={handleRegistrationDataReady}
+        />
+      );
+    }
+
+    if (view === 'termsOfUse') {
+      return <TermsOfUse sections={termsOfUseTranslation.sections} />;
+    }
+
+    if (view === 'privacyPolicy') {
+      return <PrivacyPolicy />;
+    }
+
+    if (view === 'informedConsent') {
+      return informedConsentBody;
+    }
+
+    if (view === 'confirmEmail') {
+      return (
+        <ConfirmEmail
+          email={signupEmail}
+          token={userId ?? ''}
+          onEmailChange={handleSignupEmailChange}
+          onTokenChange={handleConfirmEmailUserIdChange}
+          onConfirm={handleConfirmEmailSubmit}
+          errorTranslationKey={confirmEmailErrorKey}
+          errorMessage={confirmEmailErrorMessage}
+          isSubmitting={confirmEmailMutation.isPending}
+        />
+      );
+    }
+
+    if (view === 'informedConsentText') {
+      return <InformedConsentText />;
+    }
+
+    if (view === 'confirmEmailSuccess') {
+      return <ConfirmEmailSuccess />;
+    }
+
+    if (view === 'signupSuccess') {
+      return <SingupSuccess />;
+    }
+
+    if (view === 'forgotPassword') {
+      return (
+        <ForgotPassword
+          formId={formId}
+          initialEmail={forgotEmail}
+          onSubmittingChange={handleForgotSubmittingChange}
+          onEmailChange={handleForgotEmailChange}
+        />
+      );
+    }
+
+    return (
+      <Login
+        formId={formId}
+        onForgotPassword={handleNavigateToForgotPassword}
+        onSubmittingChange={handleLoginSubmittingChange}
+        onEmailChange={handleLoginEmailChange}
+        initialEmail={loginEmail}
+      />
+    );
+  }, [
+    dialogBodyOverride,
+    view,
+    formId,
+    signupEmail,
+    inviteCode,
+    signupPassword,
+    signupConfirmPassword,
+    signupError,
+    signupRawError,
+    handleSignupEmailChange,
+    handleInviteCodeChange,
+    handleSignupPasswordChange,
+    handleSignupConfirmPasswordChange,
+    handleSignupErrorChange,
+    handleSignupRawErrorChange,
+    handleSignupSubmittingChange,
+    handleShowTerms,
+    handleShowPrivacy,
+    signupTermsAccepted,
+    signupPrivacyAccepted,
+    handleSignupTermsAcceptedChange,
+    handleSignupPrivacyAcceptedChange,
+    handleContinueToInformedConsent,
+    handleRegistrationDataReady,
+    termsOfUseTranslation.sections,
+    handleConfirmEmailUserIdChange,
+    handleConfirmEmailSubmit,
+    confirmEmailErrorKey,
+    confirmEmailErrorMessage,
+    confirmEmailMutation.isPending,
+    forgotEmail,
+    handleForgotSubmittingChange,
+    handleForgotEmailChange,
+    loginEmail,
+    handleNavigateToForgotPassword,
+    handleLoginSubmittingChange,
+    handleLoginEmailChange,
+    userId,
+    informedConsentBody,
   ]);
 
   const dialogTitle = useMemo(() => {
@@ -728,70 +895,7 @@ export default function Auth() {
         bodyRef={dialogBodyRef}
         onBodyScroll={handleDialogBodyScroll}
       >
-        {view === 'signup' ? (
-          <Singup
-            formId={formId}
-            initialEmail={signupEmail}
-            initialInviteCode={inviteCode}
-            initialPassword={signupPassword}
-            initialConfirmPassword={signupConfirmPassword}
-            initialError={signupError}
-            initialRawError={signupRawError}
-            onEmailChange={handleSignupEmailChange}
-            onInviteCodeChange={handleInviteCodeChange}
-            onPasswordChange={handleSignupPasswordChange}
-            onConfirmPasswordChange={handleSignupConfirmPasswordChange}
-            onErrorChange={handleSignupErrorChange}
-            onRawErrorChange={handleSignupRawErrorChange}
-            onSubmittingChange={handleSignupSubmittingChange}
-            onShowTerms={handleShowTerms}
-            onShowPrivacy={handleShowPrivacy}
-            termsAccepted={signupTermsAccepted}
-            privacyAccepted={signupPrivacyAccepted}
-            onTermsAcceptedChange={handleSignupTermsAcceptedChange}
-            onPrivacyAcceptedChange={handleSignupPrivacyAcceptedChange}
-            onContinueToInformedConsent={handleContinueToInformedConsent}
-            onRegistrationDataReady={handleRegistrationDataReady}
-          />
-        ) : view === 'termsOfUse' ? (
-          <TermsOfUse sections={termsOfUseTranslation.sections} />
-        ) : view === 'privacyPolicy' ? (
-          <PrivacyPolicy />
-        ) : view === 'informedConsent' ? (
-          null
-        ) : view === 'confirmEmail' ? (
-          <ConfirmEmail
-            email={signupEmail}
-            token={userId ?? ''}
-            onEmailChange={handleSignupEmailChange}
-            onTokenChange={handleConfirmEmailUserIdChange}
-            onConfirm={handleConfirmEmailSubmit}
-            errorTranslationKey={confirmEmailErrorKey}
-            errorMessage={confirmEmailErrorMessage}
-            isSubmitting={confirmEmailMutation.isPending}
-          />
-        ) : view === 'informedConsentText' ? (
-          <InformedConsentText />
-        ) : view === 'confirmEmailSuccess' ? (
-          <ConfirmEmailSuccess />
-        ) : view === 'signupSuccess' ? (
-          <SingupSuccess />
-        ) : view === 'forgotPassword' ? (
-          <ForgotPassword
-            formId={formId}
-            initialEmail={forgotEmail}
-            onSubmittingChange={handleForgotSubmittingChange}
-            onEmailChange={handleForgotEmailChange}
-          />
-        ) : (
-          <Login
-            formId={formId}
-            onForgotPassword={handleNavigateToForgotPassword}
-            onSubmittingChange={handleLoginSubmittingChange}
-            onEmailChange={handleLoginEmailChange}
-            initialEmail={loginEmail}
-          />
-        )}
+        {dialogContent}
       </Dialog>
     </>
   );

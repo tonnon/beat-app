@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Skeleton from '@/components/skeleton/Skeleton';
 import Textfield from '@/components/textfield/Textfield';
 import SingleChoiceOption from '@/components/single-choice-option/SIngleChoiceOptiion';
@@ -96,99 +96,37 @@ const resolveSingleChoiceOptions = (question: SurveyQuestion): ReadonlyArray<Sur
   });
 };
 
-const SLIDER_MIN_VALUE = 1;
-const SLIDER_MAX_VALUE = 10;
-const SLIDER_REQUIRED_VALUES = Array.from({ length: SLIDER_MAX_VALUE - SLIDER_MIN_VALUE + 1 }, (_, index) => SLIDER_MIN_VALUE + index);
-
 interface SingleChoiceOptionEntry {
   readonly option: SurveyAnswerOption;
   readonly label: string;
 }
 
-interface NumericSliderScale {
+interface RatingScaleData {
   readonly marks: ReadonlyArray<number>;
   readonly optionIdByValue: ReadonlyMap<number, number>;
   readonly valueByOptionId: ReadonlyMap<number, number>;
 }
 
-const resolveNumericSingleChoiceScale = (entries: ReadonlyArray<SingleChoiceOptionEntry>): NumericSliderScale | null => {
+const resolveRatingScaleData = (entries: ReadonlyArray<SingleChoiceOptionEntry>): RatingScaleData | null => {
   if (!entries.length) {
     return null;
   }
 
-  const numericEntries: Array<{ optionId: number; value: number }> = [];
-
-  for (const { option, label } of entries) {
-    const trimmedLabel = label.trim();
-    let parsedValue: number | null = null;
-
-    if (trimmedLabel) {
-      const numericMatch = trimmedLabel.match(/\d+/);
-
-      if (numericMatch) {
-        const candidate = Number.parseInt(numericMatch[0], 10);
-
-        if (!Number.isNaN(candidate)) {
-          parsedValue = candidate;
-        }
-      }
-    }
-
-    if (parsedValue == null) {
-      const orderIndex = Number.isFinite(option.orderIndex)
-        ? Number(option.orderIndex)
-        : Number.NaN;
-
-      if (!Number.isNaN(orderIndex)) {
-        const normalizedOrder = Math.round(orderIndex);
-
-        if (
-          normalizedOrder >= SLIDER_MIN_VALUE
-          && normalizedOrder <= SLIDER_MAX_VALUE
-          && !numericEntries.some((entry) => entry.value === normalizedOrder)
-        ) {
-          parsedValue = normalizedOrder;
-        }
-      }
-
-      if (parsedValue == null) {
-        const sequentialValue = SLIDER_MIN_VALUE + numericEntries.length;
-
-        if (sequentialValue <= SLIDER_MAX_VALUE) {
-          parsedValue = sequentialValue;
-        }
-      }
-    }
-
-    if (parsedValue == null || Number.isNaN(parsedValue) || parsedValue < SLIDER_MIN_VALUE || parsedValue > SLIDER_MAX_VALUE) {
-      return null;
-    }
-
-    numericEntries.push({ optionId: option.id, value: parsedValue });
-  }
+  const marks: number[] = [];
 
   const optionIdByValue = new Map<number, number>();
   const valueByOptionId = new Map<number, number>();
 
-  for (const entry of numericEntries) {
-    if (optionIdByValue.has(entry.value)) {
-      return null;
-    }
+  entries.forEach(({ option }, index) => {
+    const value = index + 1;
 
-    optionIdByValue.set(entry.value, entry.optionId);
-    valueByOptionId.set(entry.optionId, entry.value);
-  }
-
-  if (SLIDER_REQUIRED_VALUES.some((value) => !optionIdByValue.has(value))) {
-    return null;
-  }
-
-  if (optionIdByValue.size !== SLIDER_REQUIRED_VALUES.length) {
-    return null;
-  }
+    marks.push(value);
+    optionIdByValue.set(value, option.id);
+    valueByOptionId.set(option.id, value);
+  });
 
   return {
-    marks: SLIDER_REQUIRED_VALUES,
+    marks,
     optionIdByValue,
     valueByOptionId,
   };
@@ -212,6 +150,7 @@ export default function SurveyQuestionStep({
   const normalizedType = normalizeQuestionType(question.type);
   const isDateQuestion = normalizedType === 'date';
   const isSingleChoiceQuestion = normalizedType === 'singlechoice';
+  const isRatingScaleQuestion = normalizedType === 'ratingscale';
   const isHourAndMinuteQuestion = normalizedType === 'hourandminute';
   const isDaysQuestion = normalizedType === 'days';
   const isNumericQuestion = normalizedType === 'numeric';
@@ -268,8 +207,10 @@ export default function SurveyQuestionStep({
     return candidates.length ? candidates : [language];
   }, [language, languageFallbacks, question]);
 
-  const singleChoiceOptionEntries = useMemo<ReadonlyArray<SingleChoiceOptionEntry>>(() => {
-    if (!isSingleChoiceQuestion) {
+  const shouldResolveChoiceOptions = isSingleChoiceQuestion || isRatingScaleQuestion;
+
+  const choiceOptionEntries = useMemo<ReadonlyArray<SingleChoiceOptionEntry>>(() => {
+    if (!shouldResolveChoiceOptions) {
       return [];
     }
 
@@ -279,15 +220,51 @@ export default function SurveyQuestionStep({
       option,
       label: resolveSingleChoiceOptionLabel(option, languageCandidates),
     }));
-  }, [isSingleChoiceQuestion, languageCandidates, question]);
+  }, [languageCandidates, question, shouldResolveChoiceOptions]);
 
-  const numericSliderScale = useMemo(() => (
-    isSingleChoiceQuestion ? resolveNumericSingleChoiceScale(singleChoiceOptionEntries) : null
-  ), [isSingleChoiceQuestion, singleChoiceOptionEntries]);
+  const singleChoiceOptionEntries = useMemo(() => (
+    isSingleChoiceQuestion ? choiceOptionEntries : []
+  ), [choiceOptionEntries, isSingleChoiceQuestion]);
 
-  const numericSliderValue = numericSliderScale && singleChoiceAnswer != null
-    ? numericSliderScale.valueByOptionId.get(singleChoiceAnswer) ?? null
+  const ratingScaleOptionEntries = useMemo(() => (
+    isRatingScaleQuestion ? choiceOptionEntries : []
+  ), [choiceOptionEntries, isRatingScaleQuestion]);
+
+  const ratingScaleData = useMemo(() => (
+    isRatingScaleQuestion ? resolveRatingScaleData(ratingScaleOptionEntries) : null
+  ), [isRatingScaleQuestion, ratingScaleOptionEntries]);
+
+  const ratingScaleValue = ratingScaleData && singleChoiceAnswer != null
+    ? ratingScaleData.valueByOptionId.get(singleChoiceAnswer) ?? null
     : null;
+
+  useEffect(() => {
+    if (
+      !isRatingScaleQuestion ||
+      !ratingScaleData ||
+      ratingScaleValue != null ||
+      !onAnswerChange
+    ) {
+      return;
+    }
+
+    const defaultMark = ratingScaleData.marks[0] ?? null;
+
+    if (defaultMark == null) {
+      return;
+    }
+
+    const defaultOptionId = ratingScaleData.optionIdByValue.get(defaultMark) ?? null;
+
+    if (defaultOptionId != null) {
+      onAnswerChange(defaultOptionId);
+    }
+  }, [
+    isRatingScaleQuestion,
+    ratingScaleData,
+    ratingScaleValue,
+    onAnswerChange,
+  ]);
 
   const questionTranslation = useMemo(() => {
     for (const candidate of languageCandidates) {
@@ -451,15 +428,15 @@ export default function SurveyQuestionStep({
           />
         </div>
       ) : null}
-      {isSingleChoiceQuestion && numericSliderScale ? (
+      {isRatingScaleQuestion && ratingScaleData ? (
         <div className="survey-question-step-field">
           <Slider
             id={`survey-question-${question.id}-slider`}
-            min={numericSliderScale.marks[0]}
-            max={numericSliderScale.marks[numericSliderScale.marks.length - 1]}
+            min={ratingScaleData.marks[0]}
+            max={ratingScaleData.marks[ratingScaleData.marks.length - 1]}
             step={1}
-            marks={numericSliderScale.marks}
-            value={numericSliderValue}
+            marks={ratingScaleData.marks}
+            value={ratingScaleValue}
             label={questionTitle || pretitle || undefined}
             showLabel={false}
             onChange={(nextValue) => {
@@ -467,7 +444,7 @@ export default function SurveyQuestionStep({
                 return;
               }
 
-              const optionId = numericSliderScale.optionIdByValue.get(nextValue) ?? null;
+              const optionId = ratingScaleData.optionIdByValue.get(nextValue) ?? null;
 
               if (optionId != null) {
                 onAnswerChange(optionId);
@@ -476,7 +453,7 @@ export default function SurveyQuestionStep({
           />
         </div>
       ) : null}
-      {isSingleChoiceQuestion && !numericSliderScale && singleChoiceOptionEntries.length ? (
+      {isSingleChoiceQuestion && singleChoiceOptionEntries.length ? (
         <div className="survey-question-step-options-wrapper">
           <ul className="survey-question-step-options">
             {singleChoiceOptionEntries.map(({ option, label }) => {

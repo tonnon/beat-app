@@ -120,6 +120,10 @@ export const normalizeQuestionType = (type: string | null | undefined): string =
     case 'openended':
     case 'paragraph':
       return 'text';
+    case 'ratingscale':
+    case 'rating':
+    case 'scale':
+      return 'ratingscale';
     default:
       return trimmed.toLowerCase();
   }

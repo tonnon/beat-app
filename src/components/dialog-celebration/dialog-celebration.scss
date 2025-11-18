@@ -1,0 +1,107 @@
+.dialog-celebration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+  position: relative;
+  overflow: visible;
+}
+
+.dialog-celebration__confetti {
+  position: absolute;
+  inset: -8% -4% -8%;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+  display: block;
+}
+
+.dialog-celebration__confetti-piece {
+  position: absolute;
+  opacity: 0;
+  border-radius: 999px;
+  animation-name: dialog-celebration-confetti;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: 2.4s;
+  transform-origin: center;
+  --confetti-drift-x: 0px;
+  --confetti-drift-y: 0px;
+  --confetti-rotation: 360deg;
+  will-change: transform, opacity;
+}
+
+.dialog-celebration__confetti-piece--primary {
+  background-color: $color-primary;
+}
+
+.dialog-celebration__confetti-piece--primaryAlt {
+  background-color: $color-primary-alt;
+}
+
+.dialog-celebration__confetti-piece--success {
+  background-color: $color-success;
+}
+
+.dialog-celebration__confetti-piece--primaryToAlt {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-alt 100%);
+}
+
+.dialog-celebration__confetti-piece--primaryToSuccess {
+  background: linear-gradient(135deg, $color-primary 0%, $color-success 100%);
+}
+
+.dialog-celebration__confetti-piece--altToSuccess {
+  background: linear-gradient(135deg, $color-primary-alt 0%, $color-success 100%);
+}
+
+.dialog-celebration__confetti-piece:nth-child(odd) {
+  animation-duration: 2.6s;
+}
+
+.dialog-celebration__body {
+  position: relative;
+  background-color: $color-white;
+  border-radius: 0.1875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dialog-celebration__actions {
+  margin-top: 1.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@keyframes dialog-celebration-confetti {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  55% {
+    transform: translate(
+      calc(var(--confetti-drift-x) * 0.55),
+      calc(var(--confetti-drift-y) * 0.55)
+    ) rotate(calc(var(--confetti-rotation) * 0.6));
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(
+      var(--confetti-drift-x),
+      var(--confetti-drift-y)
+    ) rotate(var(--confetti-rotation));
+  }
+}

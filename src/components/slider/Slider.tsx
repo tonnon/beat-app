@@ -34,7 +34,7 @@ const Slider = forwardRef<HTMLDivElement, SliderProps>((props, forwardedRef) => 
 
   const resolvedValue = (() => {
     if (value == null || Number.isNaN(value)) {
-      return undefined;
+      return min;
     }
 
     if (value < min) {
@@ -90,8 +90,7 @@ const Slider = forwardRef<HTMLDivElement, SliderProps>((props, forwardedRef) => 
         ref={forwardedRef}
         className="slider-root"
         disabled={disabled}
-        value={resolvedValue == null ? undefined : [resolvedValue]}
-        defaultValue={[min]}
+        value={[resolvedValue]}
         min={min}
         max={max}
         step={step}
